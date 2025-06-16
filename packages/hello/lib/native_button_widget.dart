@@ -5,11 +5,15 @@ import 'package:flutter/services.dart';
 class NativeButtonWidget extends StatefulWidget {
   final String title;
   final VoidCallback onPressed;
+  final Color? backgroundColor;
+  final Size? size;
 
   const NativeButtonWidget({
     super.key,
     required this.title,
     required this.onPressed,
+    this.backgroundColor,
+    this.size,
   });
 
   @override
@@ -27,6 +31,42 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
   void initState() {
     super.initState();
     _platformChannel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  @override
+  void didUpdateWidget(NativeButtonWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.title != oldWidget.title ||
+        widget.backgroundColor != oldWidget.backgroundColor ||
+        widget.size != oldWidget.size) {
+      _updateNativeView();
+    }
+  }
+
+  Future<void> _updateNativeView() async {
+    // This is the same map of parameters used for creation.
+    final Map<String, dynamic> updateParams = <String, dynamic>{
+      'title': widget.title,
+    };
+
+    if (widget.backgroundColor != null) {
+      updateParams['backgroundColor'] = {
+        'red': widget.backgroundColor!.red / 255.0,
+        'green': widget.backgroundColor!.green / 255.0,
+        'blue': widget.backgroundColor!.blue / 255.0,
+        'alpha': widget.backgroundColor!.alpha / 255.0,
+      };
+    }
+
+    if (widget.size != null) {
+      updateParams['size'] = {
+        'width': widget.size!.width,
+        'height': widget.size!.height,
+      };
+    }
+
+    // Invoke a method on the channel to update the native view
+    await _platformChannel.invokeMethod('update', updateParams);
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
@@ -47,12 +87,28 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
       'title': widget.title,
     };
 
+    if (widget.backgroundColor != null) {
+      creationParams['backgroundColor'] = {
+        'red': widget.backgroundColor!.red / 255.0,
+        'green': widget.backgroundColor!.green / 255.0,
+        'blue': widget.backgroundColor!.blue / 255.0,
+        'alpha': widget.backgroundColor!.alpha / 255.0,
+      };
+    }
+
+    if (widget.size != null) {
+      creationParams['size'] = {
+        'width': widget.size!.width,
+        'height': widget.size!.height,
+      };
+    }
+
     // Only build UiKitView on iOS.
     // You might want to add a fallback for other platforms or throw an error.
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return SizedBox(
-        width: 200, // Or make these configurable via widget parameters
-        height: 50,
+        width: widget.size?.width ?? 200, // Use provided width or default
+        height: widget.size?.height ?? 50, // Use provided height or default
         child: UiKitView(
           viewType: viewType,
           layoutDirection: TextDirection.ltr,

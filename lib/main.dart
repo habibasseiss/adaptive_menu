@@ -40,8 +40,10 @@ class MyHomePage extends StatelessWidget {
           children: <Widget>[
             const Text("This is a test app."),
             NativeButtonWidget(
-              title: "Plugin Button",
+              title: "Button",
               onPressed: _handleNativeButtonTap,
+              backgroundColor: Colors.blue,
+              size: const Size(200, 100), // Example size
             ),
           ],
         ),
