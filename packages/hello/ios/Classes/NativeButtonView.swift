@@ -61,8 +61,40 @@ class NativeButtonView: NSObject, FlutterPlatformView {
             return
         }
 
-        // Set title
-        _button.setTitle(arguments["title"] as? String ?? "Native iOS Button", for: .normal)
+        // Reset button content before setting new content
+        _button.setTitle(nil, for: .normal)
+        _button.setImage(nil, for: .normal)
+
+        // Set content from the 'child' parameter
+        if let childMap = arguments["child"] as? [String: Any],
+           let type = childMap["type"] as? String {
+            
+            if type == "text" {
+                let text = childMap["text"] as? String ?? ""
+                _button.setTitle(text, for: .normal)
+            } else if type == "icon" {
+                if let iconData = childMap["icon"] as? [String: Any],
+                   let codePoint = iconData["codePoint"] as? Int,
+                   let fontFamily = iconData["fontFamily"] as? String {
+                    
+                    let iconSize = childMap["size"] as? CGFloat ?? 24.0
+                    var iconColor = _button.tintColor ?? .blue
+                    
+                    if let colorMap = childMap["color"] as? [String: Double],
+                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
+                        iconColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
+                    }
+                    
+                    if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
+                        _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
+                    } else {
+                    }
+                }
+            }
+        } else {
+            // Fallback if 'child' is not provided correctly
+            _button.setTitle("Invalid Content", for: .normal)
+        }
 
         // Set background color
         if let bgColorMap = arguments["backgroundColor"] as? [String: Double],
@@ -87,6 +119,35 @@ class NativeButtonView: NSObject, FlutterPlatformView {
         // These can also be made configurable
         _button.setTitleColor(UIColor.blue, for: .normal)
         _button.layer.cornerRadius = 8
+    }
+
+    // Helper function to create a UIImage from an icon font character
+    private func imageFromIconFont(codePoint: Int, fontFamily: String, size: CGFloat, color: UIColor) -> UIImage? {
+        var effectiveFontFamily = fontFamily
+        if fontFamily == "MaterialIcons" {
+            effectiveFontFamily = "MaterialIcons-Regular"
+        }
+
+        guard let font = UIFont(name: effectiveFontFamily, size: size) else {
+            return nil
+        }
+        
+        let character = String(format: "%C", codePoint)
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: color
+        ]
+        
+        let attributedString = NSAttributedString(string: character, attributes: attributes)
+        let imageSize = attributedString.size()
+        
+        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0.0)
+        attributedString.draw(at: .zero)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return image
     }
 
     @objc func onButtonTapped() {

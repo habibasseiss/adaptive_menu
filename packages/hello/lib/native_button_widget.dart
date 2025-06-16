@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class NativeButtonWidget extends StatefulWidget {
-  final String title;
+  final Widget child;
   final VoidCallback onPressed;
   final Color? backgroundColor;
   final Size? size;
 
   const NativeButtonWidget({
     super.key,
-    required this.title,
+    required this.child,
     required this.onPressed,
     this.backgroundColor,
     this.size,
@@ -36,7 +36,7 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
   @override
   void didUpdateWidget(NativeButtonWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.title != oldWidget.title ||
+    if (widget.child != oldWidget.child ||
         widget.backgroundColor != oldWidget.backgroundColor ||
         widget.size != oldWidget.size) {
       _updateNativeView();
@@ -44,13 +44,45 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
   }
 
   Future<void> _updateNativeView() async {
-    // This is the same map of parameters used for creation.
-    final Map<String, dynamic> updateParams = <String, dynamic>{
-      'title': widget.title,
-    };
+    // Invoke a method on the channel to update the native view
+    await _platformChannel.invokeMethod('update', _buildParams());
+  }
+
+  // Helper method to build the parameter map, used for both creation and updates.
+  Map<String, dynamic> _buildParams() {
+    final Map<String, dynamic> params = <String, dynamic>{};
+
+    // Serialize the child widget into a map that can be sent to the native side.
+    final child = widget.child;
+    if (child is Text && child.data != null) {
+      params['child'] = {'type': 'text', 'text': child.data!};
+    } else if (child is Icon && child.icon is IconData) {
+      final icon = child.icon as IconData;
+      final Map<String, dynamic> iconParams = {
+        'type': 'icon',
+        'icon': {
+          'codePoint': icon.codePoint,
+          'fontFamily': icon.fontFamily,
+          'fontPackage': icon.fontPackage,
+        },
+        'size': child.size,
+      };
+      if (child.color != null) {
+        iconParams['color'] = {
+          'red': child.color!.red / 255.0,
+          'green': child.color!.green / 255.0,
+          'blue': child.color!.blue / 255.0,
+          'alpha': child.color!.alpha / 255.0,
+        };
+      }
+      params['child'] = iconParams;
+    } else {
+      // Provide a fallback for unsupported widgets.
+      params['child'] = {'type': 'text', 'text': ''};
+    }
 
     if (widget.backgroundColor != null) {
-      updateParams['backgroundColor'] = {
+      params['backgroundColor'] = {
         'red': widget.backgroundColor!.red / 255.0,
         'green': widget.backgroundColor!.green / 255.0,
         'blue': widget.backgroundColor!.blue / 255.0,
@@ -59,14 +91,12 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     }
 
     if (widget.size != null) {
-      updateParams['size'] = {
+      params['size'] = {
         'width': widget.size!.width,
         'height': widget.size!.height,
       };
     }
-
-    // Invoke a method on the channel to update the native view
-    await _platformChannel.invokeMethod('update', updateParams);
+    return params;
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
@@ -83,25 +113,7 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     const String viewType = 'com.example/native_button';
 
     // Pass parameters to the platform view.
-    final Map<String, dynamic> creationParams = <String, dynamic>{
-      'title': widget.title,
-    };
-
-    if (widget.backgroundColor != null) {
-      creationParams['backgroundColor'] = {
-        'red': widget.backgroundColor!.red / 255.0,
-        'green': widget.backgroundColor!.green / 255.0,
-        'blue': widget.backgroundColor!.blue / 255.0,
-        'alpha': widget.backgroundColor!.alpha / 255.0,
-      };
-    }
-
-    if (widget.size != null) {
-      creationParams['size'] = {
-        'width': widget.size!.width,
-        'height': widget.size!.height,
-      };
-    }
+    final Map<String, dynamic> creationParams = _buildParams();
 
     // Only build UiKitView on iOS.
     // You might want to add a fallback for other platforms or throw an error.

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hello/hello.dart';
 
@@ -40,10 +41,10 @@ class MyHomePage extends StatelessWidget {
           children: <Widget>[
             const Text("This is a test app."),
             NativeButtonWidget(
-              title: "Button",
               onPressed: _handleNativeButtonTap,
-              backgroundColor: Colors.blue,
-              size: const Size(200, 100), // Example size
+              size: const Size(32, 32),
+              // child: Text("Button", style: TextStyle(color: Colors.white)),
+              child: Icon(CupertinoIcons.add_circled),
             ),
           ],
         ),
