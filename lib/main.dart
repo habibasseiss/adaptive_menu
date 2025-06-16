@@ -41,22 +41,25 @@ class MyHomePage extends StatelessWidget {
           ),
           NativeButtonWidget(
             onPressed: _handleNativeButtonTap,
-            size: const Size(32, 32),
+            size: const Size(48, 32),
             actions: [
               NativeButtonAction(
                 title: 'Menu Item 1',
+                icon: CupertinoIcons.archivebox,
                 onPressed: () {
                   print('Action 1 was tapped!');
                 },
               ),
               NativeButtonAction(
                 title: 'Menu Item 2',
+                icon: CupertinoIcons.ellipses_bubble,
                 onPressed: () {
                   print('Action 2 was tapped!');
                 },
               ),
               NativeButtonAction(
                 title: 'Menu Item 3',
+                icon: CupertinoIcons.share_up,
                 onPressed: () {
                   print('Action 3 was tapped!');
                 },

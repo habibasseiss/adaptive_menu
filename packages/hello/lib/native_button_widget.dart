@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class NativeButtonAction {
-  final String title;
-  final VoidCallback onPressed;
   final String id;
+  final String title;
+  final IconData? icon;
+  final VoidCallback? onPressed;
 
-  NativeButtonAction({required this.title, required this.onPressed})
+  NativeButtonAction({required this.title, this.icon, this.onPressed})
     : id = UniqueKey().toString();
 }
 
@@ -111,7 +112,18 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     // Serialize actions
     if (widget.actions.isNotEmpty) {
       params['actions'] = widget.actions
-          .map((action) => {'id': action.id, 'title': action.title})
+          .map(
+            (action) => {
+              'id': action.id,
+              'title': action.title,
+              if (action.icon != null)
+                'icon': {
+                  'codePoint': action.icon!.codePoint,
+                  'fontFamily': action.icon!.fontFamily,
+                  'fontPackage': action.icon!.fontPackage,
+                },
+            },
+          )
           .toList();
     }
 
@@ -128,7 +140,7 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
           (a) => a.id == actionId,
           orElse: () => throw Exception('Action with id $actionId not found'),
         );
-        action.onPressed();
+        action.onPressed?.call();
       }
     }
   }

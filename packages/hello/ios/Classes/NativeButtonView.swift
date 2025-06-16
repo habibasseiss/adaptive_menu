@@ -56,7 +56,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
         guard let arguments = args as? [String: Any] else {
             // Handle case where there are no arguments
             _button.setTitle("Default Native Title", for: .normal)
-            _button.backgroundColor = UIColor.lightGray.withAlphaComponent(0.5)
+            _button.backgroundColor = UIColor.clear
             _button.frame = _view.bounds
             _button.menu = nil
             _button.showsMenuAsPrimaryAction = false
@@ -107,7 +107,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
            let alpha = bgColorMap["alpha"] {
             _button.backgroundColor = UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha))
         } else {
-            _button.backgroundColor = UIColor.lightGray.withAlphaComponent(0.5)
+            _button.backgroundColor = UIColor.clear
         }
         
         // Set the frame from the 'size' argument
@@ -120,13 +120,30 @@ class NativeButtonView: NSObject, FlutterPlatformView {
         }
         
         // Handle actions for pull-down menu
-        if let actionsArray = arguments["actions"] as? [[String: String]], !actionsArray.isEmpty {
+        if let actionsArray = arguments["actions"] as? [[String: Any]], !actionsArray.isEmpty {
             let uiActions = actionsArray.map { actionDict -> UIAction in
-                let actionId = actionDict["id"] ?? ""
-                let actionTitle = actionDict["title"] ?? "Action"
-                return UIAction(title: actionTitle, handler: { [weak self] _ in
+                let actionId = actionDict["id"] as? String ?? ""
+                let actionTitle = actionDict["title"] as? String ?? "Action"
+                var actionImage: UIImage? = nil
+
+                if let iconData = actionDict["icon"] as? [String: Any],
+                   let codePoint = iconData["codePoint"] as? Int,
+                   let fontFamily = iconData["fontFamily"] as? String {
+                    // Font package is not directly used in iOS for system fonts like CupertinoIcons,
+                    // but good to have if you extend to custom font packages later.
+                    // let fontPackage = iconData["fontPackage"] as? String
+                    
+                    // Assuming default icon size and color for menu items, can be made configurable
+                    let iconSize: CGFloat = 18.0 // A typical size for menu item icons
+                    let iconColor: UIColor = .label
+
+                    actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
+                }
+
+                let uiAction = UIAction(title: actionTitle, image: actionImage, handler: { [weak self] _ in
                     self?._methodChannel.invokeMethod("actionSelected", arguments: ["id": actionId])
                 })
+                return uiAction
             }
             _button.menu = UIMenu(title: "", children: uiActions)
             _button.showsMenuAsPrimaryAction = true
