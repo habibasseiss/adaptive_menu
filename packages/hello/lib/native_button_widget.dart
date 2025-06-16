@@ -4,7 +4,29 @@ import 'package:flutter/services.dart';
 
 enum NativeButtonActionStyle { normal, destructive }
 
-class NativeButtonAction {
+enum NativeButtonGroupStyle { normal, inline }
+
+abstract class NativeButtonMenuItem {}
+
+class NativeButtonGroup extends NativeButtonMenuItem {
+  final String? title;
+  final List<NativeButtonMenuItem> actions;
+  final NativeButtonGroupStyle style;
+
+  NativeButtonGroup({
+    required this.title,
+    required this.actions,
+    this.style = NativeButtonGroupStyle.normal,
+  });
+
+  NativeButtonGroup.inline({
+    required this.actions,
+    this.title,
+    this.style = NativeButtonGroupStyle.inline,
+  });
+}
+
+class NativeButtonAction extends NativeButtonMenuItem {
   final String id;
   final String title;
   final IconData? icon;
@@ -27,14 +49,14 @@ class NativeButtonWidget extends StatefulWidget {
   final Widget child;
   final VoidCallback onPressed;
   final Color? backgroundColor;
-  final List<NativeButtonAction> actions;
+  final List<NativeButtonMenuItem> items;
   final Size? size;
 
   const NativeButtonWidget({
     super.key,
     required this.child,
     required this.onPressed,
-    required this.actions,
+    required this.items,
     this.backgroundColor,
     this.size,
   });
@@ -61,7 +83,8 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     super.didUpdateWidget(oldWidget);
     if (widget.child != oldWidget.child ||
         widget.backgroundColor != oldWidget.backgroundColor ||
-        widget.size != oldWidget.size) {
+        widget.size != oldWidget.size ||
+        !listEquals(widget.items, oldWidget.items)) {
       _updateNativeView();
     }
   }
@@ -120,29 +143,41 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
       };
     }
 
-    // Serialize actions
-    if (widget.actions.isNotEmpty) {
-      params['actions'] = widget.actions
-          .map(
-            (action) => {
-              'id': action.id,
-              'title': action.title,
-              'style': action.style
-                  .toString()
-                  .split('.')
-                  .last, // e.g., 'normal' or 'destructive'
-              if (action.icon != null)
-                'icon': {
-                  'codePoint': action.icon!.codePoint,
-                  'fontFamily': action.icon!.fontFamily,
-                  'fontPackage': action.icon!.fontPackage,
-                },
-            },
-          )
-          .toList();
+    // Serialize menu items
+    if (widget.items.isNotEmpty) {
+      params['items'] = _serializeMenuItems(widget.items);
     }
 
     return params;
+  }
+
+  List<Map<String, dynamic>> _serializeMenuItems(
+    List<NativeButtonMenuItem> items,
+  ) {
+    return items.map((item) {
+      if (item is NativeButtonAction) {
+        return {
+          'type': 'action',
+          'id': item.id,
+          'title': item.title,
+          'style': item.style.toString().split('.').last,
+          if (item.icon != null)
+            'icon': {
+              'codePoint': item.icon!.codePoint,
+              'fontFamily': item.icon!.fontFamily,
+              'fontPackage': item.icon!.fontPackage,
+            },
+        };
+      } else if (item is NativeButtonGroup) {
+        return {
+          'type': 'group',
+          'title': item.title,
+          'style': item.style.toString().split('.').last,
+          'items': _serializeMenuItems(item.actions),
+        };
+      }
+      return <String, dynamic>{};
+    }).toList();
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
@@ -151,13 +186,28 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     } else if (call.method == 'actionSelected') {
       final String? actionId = call.arguments['id'] as String?;
       if (actionId != null) {
-        final action = widget.actions.firstWhere(
-          (a) => a.id == actionId,
-          orElse: () => throw Exception('Action with id $actionId not found'),
-        );
-        action.onPressed?.call();
+        final action = _findActionById(actionId, widget.items);
+        action?.onPressed?.call();
       }
     }
+  }
+
+  NativeButtonAction? _findActionById(
+    String id,
+    List<NativeButtonMenuItem> items,
+  ) {
+    for (final item in items) {
+      if (item is NativeButtonAction && item.id == id) {
+        return item;
+      }
+      if (item is NativeButtonGroup) {
+        final action = _findActionById(id, item.actions);
+        if (action != null) {
+          return action;
+        }
+      }
+    }
+    return null;
   }
 
   @override

@@ -42,7 +42,7 @@ class MyHomePage extends StatelessWidget {
           NativeButtonWidget(
             onPressed: _handleNativeButtonTap,
             size: const Size(48, 32),
-            actions: [
+            items: [
               NativeButtonAction(
                 title: 'Menu Item 1',
                 icon: CupertinoIcons.archivebox,
@@ -57,12 +57,17 @@ class MyHomePage extends StatelessWidget {
                   print('Action 2 was tapped!');
                 },
               ),
-              NativeButtonAction.destructive(
-                title: 'Menu Item 3',
-                icon: CupertinoIcons.share_up,
-                onPressed: () {
-                  print('Action 3 was tapped!');
-                },
+              NativeButtonGroup.inline(
+                // title: 'Group',
+                actions: [
+                  NativeButtonAction.destructive(
+                    title: 'Menu Item 3',
+                    icon: CupertinoIcons.share_up,
+                    onPressed: () {
+                      print('Action 3 was tapped!');
+                    },
+                  ),
+                ],
               ),
             ],
             // child: Text("Button", style: TextStyle(color: Colors.white)),
@@ -75,7 +80,67 @@ class MyHomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text("This is a test app."),
-            
+          
+            NativeButtonWidget(
+              onPressed: _handleNativeButtonTap,
+              size: const Size(48, 32),
+              items: [
+                NativeButtonAction(
+                  title: 'Menu Item 1',
+                  icon: CupertinoIcons.archivebox,
+                  onPressed: () {
+                    print('Action 1 was tapped!');
+                  },
+                ),
+                NativeButtonAction(
+                  title: 'Menu Item 2',
+                  icon: CupertinoIcons.ellipses_bubble,
+                  onPressed: () {
+                    print('Action 2 was tapped!');
+                  },
+                ),
+                NativeButtonGroup(
+                  title: 'Group',
+                  actions: [
+                    NativeButtonGroup(
+                      title: 'Sub Group',
+                      actions: [
+                        NativeButtonAction(
+                          title: 'Menu Item 4',
+                          icon: CupertinoIcons.doc_text,
+                          onPressed: () {
+                            print('Action 4 was tapped!');
+                          },
+                        ),
+                        NativeButtonAction.destructive(
+                          title: 'Menu Item 3',
+                          icon: CupertinoIcons.share_up,
+                          onPressed: () {
+                            print('Action 3 was tapped!');
+                          },
+                        ),
+                      ],
+                    ),
+                    NativeButtonAction(
+                      title: 'Menu Item 4',
+                      icon: CupertinoIcons.doc_text,
+                      onPressed: () {
+                        print('Action 4 was tapped!');
+                      },
+                    ),
+                    NativeButtonAction.destructive(
+                      title: 'Menu Item 3',
+                      icon: CupertinoIcons.share_up,
+                      onPressed: () {
+                        print('Action 3 was tapped!');
+                      },
+                    ),
+                  ],
+                ),
+              ],
+              // child: Text("Button", style: TextStyle(color: Colors.white)),
+              child: Icon(CupertinoIcons.ellipsis_circle),
+            ),
           ],
         ),
       ),

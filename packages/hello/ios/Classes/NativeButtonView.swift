@@ -120,24 +120,35 @@ class NativeButtonView: NSObject, FlutterPlatformView {
         }
         
         // Handle actions for pull-down menu
-        if let actionsArray = arguments["actions"] as? [[String: Any]], !actionsArray.isEmpty {
-            let uiActions = actionsArray.map { actionDict -> UIAction in
-                let actionId = actionDict["id"] as? String ?? ""
-                let actionTitle = actionDict["title"] as? String ?? "Action"
-                var actionImage: UIImage? = nil
-                let actionStyle = actionDict["style"] as? String ?? "normal"
+        if let itemsArray = arguments["items"] as? [[String: Any]], !itemsArray.isEmpty {
+            let menuElements = createMenuItems(from: itemsArray)
+            _button.menu = UIMenu(title: "", children: menuElements)
+            _button.showsMenuAsPrimaryAction = true
+        } else {
+            _button.menu = nil
+            _button.showsMenuAsPrimaryAction = false
+        }
 
-                if let iconData = actionDict["icon"] as? [String: Any],
+        // These can also be made configurable
+        _button.setTitleColor(UIColor.blue, for: .normal)
+        _button.layer.cornerRadius = 8
+    }
+
+    private func createMenuItems(from itemsData: [[String: Any]]) -> [UIMenuElement] {
+        return itemsData.compactMap { itemDict -> UIMenuElement? in
+            guard let type = itemDict["type"] as? String else { return nil }
+
+            if type == "action" {
+                let actionId = itemDict["id"] as? String ?? ""
+                let actionTitle = itemDict["title"] as? String ?? "Action"
+                var actionImage: UIImage? = nil
+                let actionStyle = itemDict["style"] as? String ?? "normal"
+
+                if let iconData = itemDict["icon"] as? [String: Any],
                    let codePoint = iconData["codePoint"] as? Int,
                    let fontFamily = iconData["fontFamily"] as? String {
-                    // Font package is not directly used in iOS for system fonts like CupertinoIcons,
-                    // but good to have if you extend to custom font packages later.
-                    // let fontPackage = iconData["fontPackage"] as? String
-                    
-                    // Assuming default icon size and color for menu items, can be made configurable
-                    let iconSize: CGFloat = 18.0 // A typical size for menu item icons
+                    let iconSize: CGFloat = 18.0
                     let iconColor: UIColor = actionStyle == "destructive" ? .systemRed : .label
-
                     actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
                 }
 
@@ -148,21 +159,23 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                 if actionStyle == "destructive" {
                     uiAction.attributes = .destructive
                 }
-
                 return uiAction
-            }
-            _button.menu = UIMenu(title: "", children: uiActions)
-            _button.showsMenuAsPrimaryAction = true
-        } else {
-            _button.menu = nil
-            _button.showsMenuAsPrimaryAction = false
-            // Ensure the original tap target is still active if no menu
-            // _button.addTarget(self, action: #selector(onButtonTapped), for: .touchUpInside) // Already added in createNativeView
-        }
+            } else if type == "group" {
+                let groupTitle = itemDict["title"] as? String ?? ""
+                let groupItems = itemDict["items"] as? [[String: Any]] ?? []
+                let subMenuItems = createMenuItems(from: groupItems)
 
-        // These can also be made configurable
-        _button.setTitleColor(UIColor.blue, for: .normal)
-        _button.layer.cornerRadius = 8
+                let groupStyle = itemDict["style"] as? String ?? "normal"
+                var menuOptions: UIMenu.Options = []
+                if #available(iOS 13.0, *), groupStyle == "inline" {
+                    menuOptions = .displayInline
+                }
+
+                return UIMenu(title: groupTitle, options: menuOptions, children: subMenuItems)
+            }
+
+            return nil
+        }
     }
 
     // Helper function to create a UIImage from an icon font character
