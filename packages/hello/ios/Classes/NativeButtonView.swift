@@ -125,6 +125,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                 let actionId = actionDict["id"] as? String ?? ""
                 let actionTitle = actionDict["title"] as? String ?? "Action"
                 var actionImage: UIImage? = nil
+                let actionStyle = actionDict["style"] as? String ?? "normal"
 
                 if let iconData = actionDict["icon"] as? [String: Any],
                    let codePoint = iconData["codePoint"] as? Int,
@@ -135,7 +136,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                     
                     // Assuming default icon size and color for menu items, can be made configurable
                     let iconSize: CGFloat = 18.0 // A typical size for menu item icons
-                    let iconColor: UIColor = .label
+                    let iconColor: UIColor = actionStyle == "destructive" ? .systemRed : .label
 
                     actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
                 }
@@ -143,6 +144,11 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                 let uiAction = UIAction(title: actionTitle, image: actionImage, handler: { [weak self] _ in
                     self?._methodChannel.invokeMethod("actionSelected", arguments: ["id": actionId])
                 })
+
+                if actionStyle == "destructive" {
+                    uiAction.attributes = .destructive
+                }
+
                 return uiAction
             }
             _button.menu = UIMenu(title: "", children: uiActions)

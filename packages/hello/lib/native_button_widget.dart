@@ -2,14 +2,25 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+enum NativeButtonActionStyle { normal, destructive }
+
 class NativeButtonAction {
   final String id;
   final String title;
   final IconData? icon;
   final VoidCallback? onPressed;
+  final NativeButtonActionStyle style;
 
   NativeButtonAction({required this.title, this.icon, this.onPressed})
-    : id = UniqueKey().toString();
+    : id = UniqueKey().toString(),
+      style = NativeButtonActionStyle.normal;
+
+  NativeButtonAction.destructive({
+    required this.title,
+    this.icon,
+    this.onPressed,
+  }) : id = UniqueKey().toString(),
+       style = NativeButtonActionStyle.destructive;
 }
 
 class NativeButtonWidget extends StatefulWidget {
@@ -116,6 +127,10 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
             (action) => {
               'id': action.id,
               'title': action.title,
+              'style': action.style
+                  .toString()
+                  .split('.')
+                  .last, // e.g., 'normal' or 'destructive'
               if (action.icon != null)
                 'icon': {
                   'codePoint': action.icon!.codePoint,

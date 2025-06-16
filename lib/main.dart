@@ -57,7 +57,7 @@ class MyHomePage extends StatelessWidget {
                   print('Action 2 was tapped!');
                 },
               ),
-              NativeButtonAction(
+              NativeButtonAction.destructive(
                 title: 'Menu Item 3',
                 icon: CupertinoIcons.share_up,
                 onPressed: () {
