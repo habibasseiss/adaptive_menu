@@ -2,16 +2,27 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class NativeButtonAction {
+  final String title;
+  final VoidCallback onPressed;
+  final String id;
+
+  NativeButtonAction({required this.title, required this.onPressed})
+    : id = UniqueKey().toString();
+}
+
 class NativeButtonWidget extends StatefulWidget {
   final Widget child;
   final VoidCallback onPressed;
   final Color? backgroundColor;
+  final List<NativeButtonAction> actions;
   final Size? size;
 
   const NativeButtonWidget({
     super.key,
     required this.child,
     required this.onPressed,
+    required this.actions,
     this.backgroundColor,
     this.size,
   });
@@ -96,12 +107,29 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
         'height': widget.size!.height,
       };
     }
+
+    // Serialize actions
+    if (widget.actions.isNotEmpty) {
+      params['actions'] = widget.actions
+          .map((action) => {'id': action.id, 'title': action.title})
+          .toList();
+    }
+
     return params;
   }
 
   Future<void> _handleMethodCall(MethodCall call) async {
     if (call.method == 'buttonTapped') {
       widget.onPressed();
+    } else if (call.method == 'actionSelected') {
+      final String? actionId = call.arguments['id'] as String?;
+      if (actionId != null) {
+        final action = widget.actions.firstWhere(
+          (a) => a.id == actionId,
+          orElse: () => throw Exception('Action with id $actionId not found'),
+        );
+        action.onPressed();
+      }
     }
   }
 

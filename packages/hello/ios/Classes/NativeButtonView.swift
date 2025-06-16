@@ -58,6 +58,8 @@ class NativeButtonView: NSObject, FlutterPlatformView {
             _button.setTitle("Default Native Title", for: .normal)
             _button.backgroundColor = UIColor.lightGray.withAlphaComponent(0.5)
             _button.frame = _view.bounds
+            _button.menu = nil
+            _button.showsMenuAsPrimaryAction = false
             return
         }
 
@@ -88,6 +90,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                     if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
                         _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
                     } else {
+                        // Error creating icon image, perhaps log or set a default
                     }
                 }
             }
@@ -116,6 +119,24 @@ class NativeButtonView: NSObject, FlutterPlatformView {
             _button.frame = _view.bounds
         }
         
+        // Handle actions for pull-down menu
+        if let actionsArray = arguments["actions"] as? [[String: String]], !actionsArray.isEmpty {
+            let uiActions = actionsArray.map { actionDict -> UIAction in
+                let actionId = actionDict["id"] ?? ""
+                let actionTitle = actionDict["title"] ?? "Action"
+                return UIAction(title: actionTitle, handler: { [weak self] _ in
+                    self?._methodChannel.invokeMethod("actionSelected", arguments: ["id": actionId])
+                })
+            }
+            _button.menu = UIMenu(title: "", children: uiActions)
+            _button.showsMenuAsPrimaryAction = true
+        } else {
+            _button.menu = nil
+            _button.showsMenuAsPrimaryAction = false
+            // Ensure the original tap target is still active if no menu
+            // _button.addTarget(self, action: #selector(onButtonTapped), for: .touchUpInside) // Already added in createNativeView
+        }
+
         // These can also be made configurable
         _button.setTitleColor(UIColor.blue, for: .normal)
         _button.layer.cornerRadius = 8
