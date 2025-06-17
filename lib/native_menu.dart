@@ -92,6 +92,15 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
   }
 
+  Map<String, double> _serializeColor(Color color) {
+    return {
+      'red': ((color.r * 255.0).round() & 0xff) / 255.0,
+      'green': ((color.g * 255.0).round() & 0xff) / 255.0,
+      'blue': ((color.b * 255.0).round() & 0xff) / 255.0,
+      'alpha': ((color.a * 255.0).round() & 0xff) / 255.0,
+    };
+  }
+
   Map<String, dynamic> _buildParams() {
     final Map<String, dynamic> params = <String, dynamic>{};
 
@@ -110,12 +119,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
         'size': child.size,
       };
       if (child.color != null) {
-        iconParams['color'] = {
-          'red': child.color!.red / 255.0,
-          'green': child.color!.green / 255.0,
-          'blue': child.color!.blue / 255.0,
-          'alpha': child.color!.alpha / 255.0,
-        };
+        iconParams['color'] = _serializeColor(child.color!);
       }
       params['child'] = iconParams;
     } else {
@@ -123,12 +127,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     }
 
     if (widget.backgroundColor != null) {
-      params['backgroundColor'] = {
-        'red': widget.backgroundColor!.red / 255.0,
-        'green': widget.backgroundColor!.green / 255.0,
-        'blue': widget.backgroundColor!.blue / 255.0,
-        'alpha': widget.backgroundColor!.alpha / 255.0,
-      };
+      params['backgroundColor'] = _serializeColor(widget.backgroundColor!);
     }
 
     params['size'] = {
@@ -210,7 +209,6 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
         height: widget.size.height,
         child: UiKitView(
           viewType: viewType,
-          layoutDirection: TextDirection.ltr,
           creationParams: creationParams,
           creationParamsCodec: const StandardMessageCodec(),
           onPlatformViewCreated: _onPlatformViewCreated,
