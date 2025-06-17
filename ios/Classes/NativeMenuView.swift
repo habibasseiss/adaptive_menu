@@ -53,6 +53,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         // Apply initial properties
         updateButtonProperties(with: args)
 
+        _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
         platformRootView.addSubview(_button)
     }
 
@@ -128,15 +129,20 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         if let itemsArray = arguments["items"] as? [[String: Any]], !itemsArray.isEmpty {
             let menuElements = createMenuItems(from: itemsArray)
             _button.menu = UIMenu(title: "", children: menuElements)
-            _button.showsMenuAsPrimaryAction = true
         } else {
             _button.menu = nil
-            _button.showsMenuAsPrimaryAction = false
         }
+
+        let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
+        _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
 
         // These can also be made configurable
         _button.setTitleColor(UIColor.blue, for: .normal)
         _button.layer.cornerRadius = 8
+    }
+
+    @objc private func buttonTapped() {
+        _methodChannel.invokeMethod("buttonTapped", arguments: nil)
     }
 
     private func createMenuItems(from itemsData: [[String: Any]]) -> [UIMenuElement] {

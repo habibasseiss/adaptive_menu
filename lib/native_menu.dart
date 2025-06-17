@@ -54,6 +54,7 @@ class NativeMenuWidget extends StatefulWidget {
   final Color? backgroundColor;
   final List<NativeMenuItem> items;
   final Size size;
+  final VoidCallback? onPressed;
 
   const NativeMenuWidget({
     super.key,
@@ -61,6 +62,7 @@ class NativeMenuWidget extends StatefulWidget {
     required this.items,
     required this.size,
     this.backgroundColor,
+    this.onPressed,
   });
 
   @override
@@ -87,7 +89,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     if (widget.child != oldWidget.child ||
         widget.backgroundColor != oldWidget.backgroundColor ||
         widget.size != oldWidget.size ||
-        !listEquals(widget.items, oldWidget.items)) {
+        !listEquals(widget.items, oldWidget.items) ||
+        widget.onPressed != oldWidget.onPressed) {
       _updateNativeView();
     }
   }
@@ -140,6 +143,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       params['items'] = _serializeMenuItems(widget.items);
     }
 
+    params['showsMenuAsPrimaryAction'] = widget.onPressed == null;
+
     return params;
   }
 
@@ -172,12 +177,17 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   }
 
   Future<void> _instanceHandleMethodCall(MethodCall call) async {
-    if (call.method == 'actionSelected') {
-      final String? actionId = call.arguments['id'] as String?;
-      if (actionId != null) {
-        final action = _findActionById(actionId, widget.items);
-        action?.onPressed?.call();
-      }
+    switch (call.method) {
+      case 'buttonTapped':
+        widget.onPressed?.call();
+        break;
+      case 'actionSelected':
+        final String? actionId = call.arguments['id'] as String?;
+        if (actionId != null) {
+          final action = _findActionById(actionId, widget.items);
+          action?.onPressed?.call();
+        }
+        break;
     }
   }
 

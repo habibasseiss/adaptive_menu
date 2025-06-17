@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:native_menu/native_menu.dart';
 
 void main() {
@@ -28,7 +29,11 @@ class MyHomePage extends StatelessWidget {
         middle: const Text('Native Menu Example'),
         trailing: _TrailingWidget(),
       ),
-      child: Center(child: Text("This is a test app.")),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        // body: Center(child: Text("This is a test app.")),
+        bottomNavigationBar: _BottomNavigationBar(),
+      ),
     );
   }
 }
@@ -153,6 +158,77 @@ class __TrailingWidgetState extends State<_TrailingWidget> {
       ],
       // child: Text("Button", style: TextStyle(color: Colors.white)),
       child: Icon(CupertinoIcons.ellipsis_circle),
+    );
+  }
+}
+
+class _BottomNavigationBar extends StatelessWidget {
+  const _BottomNavigationBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            CupertinoButton(
+              onPressed: null,
+              child: Icon(CupertinoIcons.chevron_left, size: 24),
+            ),
+            CupertinoButton(
+              onPressed: null,
+              child: Icon(CupertinoIcons.chevron_right, size: 24),
+            ),
+            CupertinoButton(
+              child: Icon(CupertinoIcons.share, size: 24),
+              onPressed: () {},
+            ),
+            CupertinoButton(
+              child: Icon(CupertinoIcons.book, size: 24),
+              onPressed: () {},
+            ),
+            NativeMenuWidget(
+              onPressed: () {
+                debugPrint('NativeMenuWidget was tapped!');
+              },
+              size: const Size(64, 32),
+              items: [
+                NativeMenuAction(
+                  title: 'New Tab',
+                  icon: CupertinoIcons.plus_square_on_square,
+                  onPressed: () {
+                    debugPrint('New Tab was tapped!');
+                  },
+                ),
+                NativeMenuAction(
+                  title: 'New Private Tab',
+                  icon: CupertinoIcons.plus_square_fill_on_square_fill,
+                  onPressed: () {
+                    debugPrint('New Private Tab was tapped!');
+                  },
+                ),
+                NativeMenuAction.destructive(
+                  title: 'Close This Tab',
+                  icon: CupertinoIcons.xmark,
+                  onPressed: () {
+                    debugPrint('Close This Tab was tapped!');
+                  },
+                ),
+                NativeMenuAction.destructive(
+                  title: 'Close All Tabs',
+                  icon: CupertinoIcons.xmark,
+                  onPressed: () {
+                    debugPrint('Close All Tabs was tapped!');
+                  },
+                ),
+              ],
+              child: Icon(CupertinoIcons.square_on_square, size: 24),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
