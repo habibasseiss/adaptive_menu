@@ -47,18 +47,16 @@ class NativeMenuAction extends NativeMenuItem {
 
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
-  final VoidCallback onPressed;
   final Color? backgroundColor;
   final List<NativeMenuItem> items;
-  final Size? size;
+  final Size size;
 
   const NativeMenuWidget({
     super.key,
     required this.child,
-    required this.onPressed,
     required this.items,
+    required this.size,
     this.backgroundColor,
-    this.size,
   });
 
   @override
@@ -133,13 +131,9 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       };
     }
 
-    if (widget.size != null) {
-      params['size'] = {
-        'width': widget.size!.width,
-        'height': widget.size!.height,
-      };
-    }
-
+    params['size'] = {
+      'width': widget.size.width, 'height': widget.size.height};
+  
     if (widget.items.isNotEmpty) {
       params['items'] = _serializeMenuItems(widget.items);
     }
@@ -177,9 +171,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   }
 
   Future<void> _instanceHandleMethodCall(MethodCall call) async {
-    if (call.method == 'buttonTapped') {
-      widget.onPressed();
-    } else if (call.method == 'actionSelected') {
+    if (call.method == 'actionSelected') {
       final String? actionId = call.arguments['id'] as String?;
       if (actionId != null) {
         final action = _findActionById(actionId, widget.items);
@@ -214,8 +206,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return SizedBox(
-        width: widget.size?.width ?? 200,
-        height: widget.size?.height ?? 50,
+        width: widget.size.width,
+        height: widget.size.height,
         child: UiKitView(
           viewType: viewType,
           layoutDirection: TextDirection.ltr,

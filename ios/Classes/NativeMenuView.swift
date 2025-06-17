@@ -50,9 +50,6 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     func createNativeView(view platformRootView: UIView, arguments args: Any?){
         platformRootView.backgroundColor = UIColor.clear
 
-        // Set up the button's target action once
-        _button.addTarget(self, action: #selector(onButtonTapped), for: .touchUpInside)
-
         // Apply initial properties
         updateButtonProperties(with: args)
 
@@ -215,7 +212,4 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         return image
     }
 
-    @objc func onButtonTapped() {
-        _methodChannel.invokeMethod("buttonTapped", arguments: nil)
-    }
 }

@@ -25,10 +25,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
-  Future<void> _handleNativeButtonTap() async {
-    debugPrint('NativeMenuWidget (from hello package) was tapped!');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,19 +32,14 @@ class MyHomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Flutter Demo Home Page'),
         actions: [
-          IconButton(
-            onPressed: _handleNativeButtonTap,
-            icon: Icon(CupertinoIcons.ellipsis_circle),
-          ),
           NativeMenuWidget(
-            onPressed: _handleNativeButtonTap,
             size: const Size(48, 32),
             items: [
               NativeMenuAction(
                 title: 'Select',
                 icon: CupertinoIcons.check_mark_circled,
                 onPressed: () {
-                  print('Select was tapped!');
+                  debugPrint('Select was tapped!');
                 },
               ),
               NativeMenuAction(
@@ -102,7 +93,10 @@ class MyHomePage extends StatelessWidget {
               ),
             ],
             // child: Text("Button", style: TextStyle(color: Colors.white)),
-            child: Icon(CupertinoIcons.ellipsis_circle),
+            child: Icon(
+              CupertinoIcons.ellipsis_circle,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
