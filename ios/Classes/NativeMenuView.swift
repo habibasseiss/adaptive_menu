@@ -152,6 +152,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             if type == "action" {
                 let actionId = itemDict["id"] as? String ?? ""
                 let actionTitle = itemDict["title"] as? String ?? "Action"
+                let actionDescription = itemDict["description"] as? String
                 var actionImage: UIImage? = nil
                 let actionStyle = itemDict["style"] as? String ?? "normal"
 
@@ -166,6 +167,10 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                 let uiAction = UIAction(title: actionTitle, image: actionImage, handler: { [weak self] _ in
                     self?._methodChannel.invokeMethod("actionSelected", arguments: ["id": actionId])
                 })
+
+                if #available(iOS 15.0, *) {
+                    uiAction.subtitle = actionDescription
+                }
 
                 if actionStyle == "destructive" {
                     uiAction.attributes = .destructive
@@ -183,13 +188,22 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                 let groupItems = itemDict["items"] as? [[String: Any]] ?? []
                 let subMenuItems = createMenuItems(from: groupItems)
 
+                var groupImage: UIImage? = nil
+                if let iconData = itemDict["icon"] as? [String: Any],
+                   let codePoint = iconData["codePoint"] as? Int,
+                   let fontFamily = iconData["fontFamily"] as? String {
+                    let iconSize: CGFloat = 20.0
+                    let iconColor: UIColor = .label
+                    groupImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
+                }
+
                 let groupStyle = itemDict["style"] as? String ?? "normal"
                 var menuOptions: UIMenu.Options = []
                 if #available(iOS 13.0, *), groupStyle == "inline" {
                     menuOptions = .displayInline
                 }
 
-                return UIMenu(title: groupTitle, options: menuOptions, children: subMenuItems)
+                return UIMenu(title: groupTitle, image: groupImage, identifier: nil, options: menuOptions, children: subMenuItems)
             }
 
             return nil

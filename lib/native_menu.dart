@@ -10,6 +10,7 @@ abstract class NativeMenuItem {}
 
 class NativeMenuGroup extends NativeMenuItem {
   final String? title;
+  final IconData? icon;
   final List<NativeMenuItem> actions;
   final NativeMenuGroupStyle style;
 
@@ -17,13 +18,14 @@ class NativeMenuGroup extends NativeMenuItem {
     required this.title,
     required this.actions,
     this.style = NativeMenuGroupStyle.normal,
+    this.icon,
   });
 
   NativeMenuGroup.inline({
     required this.actions,
     this.title,
     this.style = NativeMenuGroupStyle.inline,
-  });
+  }) : icon = null;
 }
 
 class NativeMenuAction extends NativeMenuItem {
@@ -33,17 +35,19 @@ class NativeMenuAction extends NativeMenuItem {
   final VoidCallback? onPressed;
   final NativeMenuActionStyle style;
   final bool? checked;
+  final String? description;
 
   NativeMenuAction({
     required this.title,
     this.icon,
     this.onPressed,
     this.checked,
+    this.description,
   })
     : id = UniqueKey().toString(),
       style = NativeMenuActionStyle.normal;
 
-  NativeMenuAction.destructive({required this.title, this.icon, this.onPressed})
+  NativeMenuAction.destructive({required this.title, this.icon, this.onPressed, this.description})
     : id = UniqueKey().toString(),
       style = NativeMenuActionStyle.destructive,
       checked = false;
@@ -156,6 +160,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
           'id': item.id,
           'title': item.title,
           'style': item.style.toString().split('.').last,
+          if (item.description != null) 'description': item.description,
           if (item.checked != null) 'checked': item.checked,
           if (item.icon != null)
             'icon': {
@@ -170,6 +175,12 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
           'title': item.title,
           'style': item.style.toString().split('.').last,
           'items': _serializeMenuItems(item.actions),
+          if (item.icon != null)
+            'icon': {
+              'codePoint': item.icon!.codePoint,
+              'fontFamily': item.icon!.fontFamily,
+              'fontPackage': item.icon!.fontPackage,
+            },
         };
       }
       return <String, dynamic>{};

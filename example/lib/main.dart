@@ -144,6 +144,13 @@ class __TrailingWidgetState extends State<_TrailingWidget> {
             ),
           ],
         ),
+        NativeMenuAction(
+          title: 'View Options',
+          description: 'Extra options for this item',
+          onPressed: () {
+            debugPrint('View Options was tapped!');
+          },
+        ),
         NativeMenuGroup.inline(
           actions: [
             NativeMenuAction.destructive(
@@ -155,6 +162,7 @@ class __TrailingWidgetState extends State<_TrailingWidget> {
             ),
           ],
         ),
+        
       ],
       // child: Text("Button", style: TextStyle(color: Colors.white)),
       child: Icon(CupertinoIcons.ellipsis_circle),
@@ -208,6 +216,31 @@ class _BottomNavigationBar extends StatelessWidget {
                   onPressed: () {
                     debugPrint('New Private Tab was tapped!');
                   },
+                ),
+                NativeMenuGroup(
+                  title: 'Move to Tab Group',
+                  icon: CupertinoIcons.square_arrow_right,
+                  actions: [
+                    NativeMenuAction(
+                      title: 'New Tab Group',
+                      icon: CupertinoIcons.plus_square_on_square,
+                      onPressed: () {
+                        debugPrint('New Tab Group was tapped!');
+                      },
+                    ),
+                    NativeMenuGroup.inline(
+                      actions: [
+                        NativeMenuAction(
+                          title: '2 Tabs',
+                          icon: CupertinoIcons.device_phone_portrait,
+                          checked: true,
+                          onPressed: () {
+                            debugPrint('2 Tabs was tapped!');
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 NativeMenuAction.destructive(
                   title: 'Close This Tab',
