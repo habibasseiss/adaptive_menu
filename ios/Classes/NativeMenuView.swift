@@ -164,6 +164,13 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                 if actionStyle == "destructive" {
                     uiAction.attributes = .destructive
                 }
+
+                if let checked = itemDict["checked"] as? Bool {
+                    if #available(iOS 13.0, *) {
+                        uiAction.state = checked ? .on : .off
+                    }
+                }
+
                 return uiAction
             } else if type == "group" {
                 let groupTitle = itemDict["title"] as? String ?? ""

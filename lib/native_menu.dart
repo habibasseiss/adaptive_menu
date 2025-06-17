@@ -32,17 +32,21 @@ class NativeMenuAction extends NativeMenuItem {
   final IconData? icon;
   final VoidCallback? onPressed;
   final NativeMenuActionStyle style;
+  final bool? checked;
 
-  NativeMenuAction({required this.title, this.icon, this.onPressed})
-    : id = UniqueKey().toString(),
-      style = NativeMenuActionStyle.normal;
-
-  NativeMenuAction.destructive({
+  NativeMenuAction({
     required this.title,
     this.icon,
     this.onPressed,
-  }) : id = UniqueKey().toString(),
-       style = NativeMenuActionStyle.destructive;
+    this.checked,
+  })
+    : id = UniqueKey().toString(),
+      style = NativeMenuActionStyle.normal;
+
+  NativeMenuAction.destructive({required this.title, this.icon, this.onPressed})
+    : id = UniqueKey().toString(),
+      style = NativeMenuActionStyle.destructive,
+      checked = false;
 }
 
 class NativeMenuWidget extends StatefulWidget {
@@ -130,9 +134,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       params['backgroundColor'] = _serializeColor(widget.backgroundColor!);
     }
 
-    params['size'] = {
-      'width': widget.size.width, 'height': widget.size.height};
-  
+    params['size'] = {'width': widget.size.width, 'height': widget.size.height};
+
     if (widget.items.isNotEmpty) {
       params['items'] = _serializeMenuItems(widget.items);
     }
@@ -140,9 +143,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     return params;
   }
 
-  List<Map<String, dynamic>> _serializeMenuItems(
-    List<NativeMenuItem> items,
-  ) {
+  List<Map<String, dynamic>> _serializeMenuItems(List<NativeMenuItem> items) {
     return items.map((item) {
       if (item is NativeMenuAction) {
         return {
@@ -150,6 +151,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
           'id': item.id,
           'title': item.title,
           'style': item.style.toString().split('.').last,
+          if (item.checked != null) 'checked': item.checked,
           if (item.icon != null)
             'icon': {
               'codePoint': item.icon!.codePoint,
@@ -179,10 +181,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     }
   }
 
-  NativeMenuAction? _findActionById(
-    String id,
-    List<NativeMenuItem> items,
-  ) {
+  NativeMenuAction? _findActionById(String id, List<NativeMenuItem> items) {
     for (final item in items) {
       if (item is NativeMenuAction && item.id == id) {
         return item;
