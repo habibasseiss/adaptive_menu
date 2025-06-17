@@ -5,6 +5,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
     private var _view: UIView
     private var _methodChannel: FlutterMethodChannel
     private let _button: UIButton = UIButton(type: .system)
+    private let _viewId: Int64
 
     init(
         frame: CGRect,
@@ -12,10 +13,17 @@ class NativeButtonView: NSObject, FlutterPlatformView {
         arguments args: Any?,
         binaryMessenger messenger: FlutterBinaryMessenger?
     ) {
+        self._viewId = viewId
         _view = UIView(frame: frame)
-        _methodChannel = FlutterMethodChannel(name: "com.example/native_button_channel",
+        // Construct a unique channel name using the viewId
+        let channelName = "com.example/native_button_channel_\(viewId)"
+        _methodChannel = FlutterMethodChannel(name: channelName,
                                               binaryMessenger: messenger!)
         super.init()
+
+        if messenger == nil {
+            fatalError("Binary messenger is nil in NativeButtonView init")
+        }
 
         // Set the method call handler before creating the view
         _methodChannel.setMethodCallHandler(handle)
@@ -147,7 +155,7 @@ class NativeButtonView: NSObject, FlutterPlatformView {
                 if let iconData = itemDict["icon"] as? [String: Any],
                    let codePoint = iconData["codePoint"] as? Int,
                    let fontFamily = iconData["fontFamily"] as? String {
-                    let iconSize: CGFloat = 18.0
+                    let iconSize: CGFloat = 20.0
                     let iconColor: UIColor = actionStyle == "destructive" ? .systemRed : .label
                     actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
                 }

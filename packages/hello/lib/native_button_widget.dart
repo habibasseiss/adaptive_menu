@@ -66,16 +66,17 @@ class NativeButtonWidget extends StatefulWidget {
 }
 
 class _NativeButtonWidgetState extends State<NativeButtonWidget> {
-  // Define the method channel
-  // IMPORTANT: This channel name must match the one used in the native iOS code (NativeButtonView.swift)
-  // and the one that will be used in the plugin's registration (SwiftHelloPlugin.swift).
-  static const _channelName = 'com.example/native_button_channel';
-  static const MethodChannel _platformChannel = MethodChannel(_channelName);
+  MethodChannel? _instanceMethodChannel; // Instance-specific channel
 
   @override
   void initState() {
     super.initState();
-    _platformChannel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  void _onPlatformViewCreated(int id) {
+    final String channelName = 'com.example/native_button_channel_$id';
+    _instanceMethodChannel = MethodChannel(channelName);
+    _instanceMethodChannel!.setMethodCallHandler(_instanceHandleMethodCall);
   }
 
   @override
@@ -90,15 +91,12 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
   }
 
   Future<void> _updateNativeView() async {
-    // Invoke a method on the channel to update the native view
-    await _platformChannel.invokeMethod('update', _buildParams());
+    await _instanceMethodChannel!.invokeMethod('update', _buildParams());
   }
 
-  // Helper method to build the parameter map, used for both creation and updates.
   Map<String, dynamic> _buildParams() {
     final Map<String, dynamic> params = <String, dynamic>{};
 
-    // Serialize the child widget into a map that can be sent to the native side.
     final child = widget.child;
     if (child is Text && child.data != null) {
       params['child'] = {'type': 'text', 'text': child.data!};
@@ -123,7 +121,6 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
       }
       params['child'] = iconParams;
     } else {
-      // Provide a fallback for unsupported widgets.
       params['child'] = {'type': 'text', 'text': ''};
     }
 
@@ -143,7 +140,6 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
       };
     }
 
-    // Serialize menu items
     if (widget.items.isNotEmpty) {
       params['items'] = _serializeMenuItems(widget.items);
     }
@@ -180,7 +176,7 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
     }).toList();
   }
 
-  Future<void> _handleMethodCall(MethodCall call) async {
+  Future<void> _instanceHandleMethodCall(MethodCall call) async {
     if (call.method == 'buttonTapped') {
       widget.onPressed();
     } else if (call.method == 'actionSelected') {
@@ -212,36 +208,30 @@ class _NativeButtonWidgetState extends State<NativeButtonWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // This is the identifier used by iOS to identify the view type.
-    // IMPORTANT: This viewType must match the one used in the plugin's registration (SwiftHelloPlugin.swift)
-    // and the one used by the NativeButtonFactory.
     const String viewType = 'com.example/native_button';
-
-    // Pass parameters to the platform view.
     final Map<String, dynamic> creationParams = _buildParams();
 
-    // Only build UiKitView on iOS.
-    // You might want to add a fallback for other platforms or throw an error.
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return SizedBox(
-        width: widget.size?.width ?? 200, // Use provided width or default
-        height: widget.size?.height ?? 50, // Use provided height or default
+        width: widget.size?.width ?? 200,
+        height: widget.size?.height ?? 50,
         child: UiKitView(
           viewType: viewType,
           layoutDirection: TextDirection.ltr,
           creationParams: creationParams,
           creationParamsCodec: const StandardMessageCodec(),
+          onPlatformViewCreated: _onPlatformViewCreated,
         ),
       );
     } else {
-      // Fallback for other platforms (e.g., show a standard Flutter button or an error message)
       return Text('$viewType is not available on this platform.');
     }
   }
 
   @override
   void dispose() {
-    _platformChannel.setMethodCallHandler(null);
+    _instanceMethodChannel?.setMethodCallHandler(null);
+    _instanceMethodChannel = null;
     super.dispose();
   }
 }
