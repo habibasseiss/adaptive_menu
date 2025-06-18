@@ -93,10 +93,19 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                         iconColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
                     }
                     
-                    if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
-                        _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
+                    // For the button icon, we have two options:
+                    // 1. If a specific color is provided, use that color directly
+                    // 2. Otherwise, use a template image that will adapt to the button's tint color
+                    if let colorMap = childMap["color"] as? [String: Double],
+                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
+                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
+                            _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
+                        }
                     } else {
-                        // Error creating icon image, perhaps log or set a default
+                        // No specific color provided, use template image that will adapt to tint color
+                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize) {
+                            _button.setImage(iconImage, for: .normal)
+                        }
                     }
                 }
             }
@@ -137,7 +146,9 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
 
         // These can also be made configurable
-        _button.setTitleColor(UIColor.blue, for: .normal)
+        // Use system blue color which adapts to light/dark mode
+        _button.setTitleColor(UIColor.systemBlue, for: .normal)
+        _button.tintColor = UIColor.systemBlue // Set tint color for template images
         _button.layer.cornerRadius = 8
     }
 
@@ -160,8 +171,14 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                    let codePoint = iconData["codePoint"] as? Int,
                    let fontFamily = iconData["fontFamily"] as? String {
                     let iconSize: CGFloat = 20.0
-                    let iconColor: UIColor = actionStyle == "destructive" ? .systemRed : .label
-                    actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
+                    
+                    // For destructive actions, we still want to use a specific color
+                    if actionStyle == "destructive" {
+                        actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: .systemRed)
+                    } else {
+                        // For normal actions, use template images that will adapt to system appearance
+                        actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize)
+                    }
                 }
 
                 let uiAction = UIAction(title: actionTitle, image: actionImage, handler: { [weak self] _ in
@@ -193,8 +210,8 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                    let codePoint = iconData["codePoint"] as? Int,
                    let fontFamily = iconData["fontFamily"] as? String {
                     let iconSize: CGFloat = 20.0
-                    let iconColor: UIColor = .label
-                    groupImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor)
+                    // Use template images for group icons that will adapt to system appearance
+                    groupImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize)
                 }
 
                 let groupStyle = itemDict["style"] as? String ?? "normal"
@@ -211,7 +228,8 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     }
 
     // Helper function to create a UIImage from an icon font character
-    private func imageFromIconFont(codePoint: Int, fontFamily: String, size: CGFloat, color: UIColor) -> UIImage? {
+    // Returns a template image that can adapt to system appearance changes
+    private func imageFromIconFont(codePoint: Int, fontFamily: String, size: CGFloat, color: UIColor? = nil) -> UIImage? {
         var effectiveFontFamily = fontFamily
         if fontFamily == "MaterialIcons" {
             effectiveFontFamily = "MaterialIcons-Regular"
@@ -223,9 +241,10 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         
         let character = String(format: "%C", codePoint)
         
+        // Use black color for template images
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: color
+            .foregroundColor: color ?? UIColor.black
         ]
         
         let attributedString = NSAttributedString(string: character, attributes: attributes)
@@ -235,6 +254,11 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         attributedString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
+        
+        // If no specific color is provided, return a template image that will use the system's tint color
+        if color == nil {
+            return image?.withRenderingMode(.alwaysTemplate)
+        }
         
         return image
     }

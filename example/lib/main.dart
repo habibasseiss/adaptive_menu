@@ -28,6 +28,7 @@ class MyHomePage extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Native Menu Example'),
         trailing: _TrailingWidget(),
+        padding: EdgeInsetsDirectional.only(start: 16, end: 0),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -53,7 +54,7 @@ class __TrailingWidgetState extends State<_TrailingWidget> {
   @override
   Widget build(BuildContext context) {
     return NativeMenuWidget(
-      size: const Size(24, 24),
+      size: const Size(56, 40),
       items: [
         NativeMenuAction(
           title: 'Select',
@@ -165,7 +166,7 @@ class __TrailingWidgetState extends State<_TrailingWidget> {
         
       ],
       // child: Text("Button", style: TextStyle(color: Colors.white)),
-      child: Icon(CupertinoIcons.ellipsis_circle),
+      child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
     );
   }
 }
