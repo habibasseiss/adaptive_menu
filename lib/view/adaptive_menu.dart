@@ -32,13 +32,22 @@ class AdaptiveMenu extends StatelessWidget {
       child: child,
     );
 
-    final materialMenu = MaterialMenu(items: items, size: size, child: child);
+    final materialMenu = MaterialMenu(
+      items: items,
+      size: size,
+      child: child,
+    );
 
-    if (type == AdaptiveMenuType.native && defaultTargetPlatform != TargetPlatform.iOS) {
+    // Native menu can only be used on iOS, but if type is null or
+    // AdaptiveMenuType.native on iOS, we will use MaterialMenu
+    // instead. On anything other than iOS, we will always use
+    // MaterialMenu.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return type == AdaptiveMenuType.native || type == null
+          ? nativeMenu
+          : materialMenu;
+    } else {
       return materialMenu;
     }
-    return type == AdaptiveMenuType.material || type == null 
-      ? materialMenu 
-      : nativeMenu;
   }
 }

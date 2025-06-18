@@ -28,13 +28,25 @@ class MyHomePage extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Adaptive Menu Example'),
-        trailing: TrailingWidget(type: AdaptiveMenuType.native),
+        trailing: TrailingWidget(
+          type: AdaptiveMenuType.native,
+          child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
+        ),
         padding: EdgeInsetsDirectional.only(start: 16, end: 0),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        // body: Center(child: Text("This is a test app.")),
-        bottomNavigationBar: _BottomNavigationBar(),
+      child: SafeArea(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SizedBox(
+            width: double.infinity,
+            child: Image.asset(
+              'assets/image.png',
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+          bottomNavigationBar: _BottomNavigationBar(),
+      ),
       ),
     );
   }

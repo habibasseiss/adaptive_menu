@@ -27,7 +27,20 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Adaptive Menu Example'),
-        actions: [TrailingWidget(type: AdaptiveMenuType.material)],
+        actions: [
+          TrailingWidget(
+            type: AdaptiveMenuType.material,
+            child: Icon(Icons.more_vert),
+          ),
+        ],
+      ),
+      body: SizedBox(
+        width: double.infinity,
+        child: Image.asset(
+          'assets/image.png',
+          fit: BoxFit.fitWidth,
+          alignment: Alignment.topCenter,
+        ),
       ),
     );
   }

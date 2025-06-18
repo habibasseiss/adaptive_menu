@@ -7,6 +7,7 @@ enum AdaptiveMenuActionStyle { normal, destructive }
 
 enum AdaptiveMenuGroupStyle { normal, inline }
 
+/// Base class for adaptive menu items.
 abstract class AdaptiveMenuItem {}
 
 class AdaptiveMenuGroup extends AdaptiveMenuItem {
@@ -15,6 +16,8 @@ class AdaptiveMenuGroup extends AdaptiveMenuItem {
   final List<AdaptiveMenuItem> actions;
   final AdaptiveMenuGroupStyle style;
 
+  /// A regular group of adaptive menu items which displays a submenu with the
+  /// group's actions.
   AdaptiveMenuGroup({
     required this.title,
     required this.actions,
@@ -22,6 +25,8 @@ class AdaptiveMenuGroup extends AdaptiveMenuItem {
     this.icon,
   });
 
+  /// An inline group of adaptive menu items which displays the group's actions
+  /// separated by dividers directly in the parent menu.
   AdaptiveMenuGroup.inline({
     required this.actions,
     this.title,

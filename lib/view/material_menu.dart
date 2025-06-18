@@ -17,53 +17,122 @@ class MaterialMenu extends StatelessWidget {
 
   List<Widget> _buildMenuItems(
     List<AdaptiveMenuItem> menuItems,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    bool forceIconPlaceholder = false,
+  }) {
     List<Widget> widgets = [];
     for (var item in menuItems) {
       if (item is AdaptiveMenuAction) {
+        Widget? leadingIcon;
+
+        // Cupertino icons are smaller than Material icons, so we need to
+        // adjust the size.
+        final iconSize = item.icon?.fontPackage == 'cupertino_icons'
+            ? 20.0
+            : 24.0;
+
+        if (item.icon != null) {
+          leadingIcon = Icon(item.icon, size: iconSize);
+        } else if (forceIconPlaceholder) {
+          // Use an invisible widget to align items without an icon.
+          leadingIcon = SizedBox(width: 24.0);
+        }
+
         widgets.add(
           MenuItemButton(
             onPressed: item.onPressed,
-            leadingIcon: item.icon != null ? Icon(item.icon) : null,
-            style: item.style == AdaptiveMenuActionStyle.destructive
-                ? ButtonStyle(
-                    foregroundColor: WidgetStateProperty.all(
-                      Colors.red.shade700,
-                    ),
-                  )
-                : null,
+            leadingIcon: item.icon?.fontPackage == 'cupertino_icons'
+                ? Padding(padding: EdgeInsets.all(2), child: leadingIcon)
+                : leadingIcon,
             trailingIcon: item.checked == true ? const Icon(Icons.check) : null,
-            child: Text(item.title),
+            child: Text(
+              item.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             // Note: item.description is not directly rendered by MenuItemButton.
             // Consider Tooltip or a custom child widget for description.
           ),
         );
       } else if (item is AdaptiveMenuGroup) {
+        // Determine if children of this group need icon alignment.
+        final groupActions = item.actions
+            .whereType<AdaptiveMenuAction>()
+            .toList();
+        final bool hasActionsWithIcons = groupActions.any(
+          (a) => a.icon != null,
+        );
+        final bool hasActionsWithoutIcons = groupActions.any(
+          (a) => a.icon == null,
+        );
+        final bool forceIconPlaceholderForChildren =
+            hasActionsWithIcons && hasActionsWithoutIcons;
+
         if (item.style == AdaptiveMenuGroupStyle.inline) {
-          // For inline groups, actions are rendered directly.
-          // The title of the inline group is currently not rendered to maintain a flat list of actions.
-          // If a title separator is needed, it could be added here as a non-interactive widget.
-          widgets.addAll(_buildMenuItems(item.actions, context));
+          // For inline groups, add separators around the group's actions.
+          if (widgets.isNotEmpty && widgets.last is! PopupMenuDivider) {
+            widgets.add(const PopupMenuDivider());
+          }
+
+          widgets.addAll(
+            _buildMenuItems(
+              item.actions,
+              context,
+              forceIconPlaceholder: forceIconPlaceholderForChildren,
+            ),
+          );
+
+          widgets.add(const PopupMenuDivider());
         } else {
-          // AdaptiveMenuGroupStyle.normal
+          assert(item.title != null, 'AdaptiveMenuGroup must have a title');
+
           widgets.add(
             SubmenuButton(
-              menuChildren: _buildMenuItems(item.actions, context),
+              menuChildren: _buildMenuItems(
+                item.actions,
+                context,
+                forceIconPlaceholder: forceIconPlaceholderForChildren,
+              ),
               leadingIcon: item.icon != null ? Icon(item.icon) : null,
-              child: Text(item.title ?? 'Submenu'), // Default title if null
+              child: Text(item.title!),
             ),
           );
         }
       }
     }
-    return widgets;
+
+    // Clean up separators to avoid leading, trailing, or consecutive dividers.
+    if (widgets.isEmpty) {
+      return [];
+    }
+
+    List<Widget> finalWidgets = [];
+    for (final widget in widgets) {
+      // Don't add a divider if it's the first item or if the previous one was also a divider.
+      if (widget is PopupMenuDivider &&
+          (finalWidgets.isEmpty || finalWidgets.last is PopupMenuDivider)) {
+        continue;
+      }
+      finalWidgets.add(widget);
+    }
+
+    // Remove any trailing divider that might be left.
+    if (finalWidgets.isNotEmpty && finalWidgets.last is PopupMenuDivider) {
+      finalWidgets.removeLast();
+    }
+
+    return finalWidgets;
   }
 
   @override
   Widget build(BuildContext context) {
     return MenuAnchor(
-      menuChildren: _buildMenuItems(items, context), // Use the helper method
+      style: MenuStyle(
+        minimumSize: WidgetStatePropertyAll(const Size(224, 0)),
+        maximumSize: WidgetStatePropertyAll(const Size.fromWidth(280)),
+      ),
+      crossAxisUnconstrained: false,
+      menuChildren: _buildMenuItems(items, context),
       builder:
           (
             BuildContext context,

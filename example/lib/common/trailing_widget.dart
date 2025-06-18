@@ -2,9 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:native_menu/adaptive_menu.dart';
 
 class TrailingWidget extends StatefulWidget {
-  const TrailingWidget({this.type, super.key});
+  const TrailingWidget({required this.child, this.type, super.key});
 
   final AdaptiveMenuType? type;
+  final Widget child;
 
   @override
   State<TrailingWidget> createState() => _TrailingWidgetState();
@@ -110,12 +111,29 @@ class _TrailingWidgetState extends State<TrailingWidget> {
             ),
           ],
         ),
-        AdaptiveMenuAction(
-          title: 'View Options',
-          description: 'Extra options for this item',
-          onPressed: () {
-            debugPrint('View Options was tapped!');
-          },
+        AdaptiveMenuGroup(
+          title: 'Extra Options',
+          actions: [
+            AdaptiveMenuAction(
+              title: 'Extra Option 1',
+              onPressed: () {
+                debugPrint('Extra Option 1 was tapped!');
+              },
+            ),
+            AdaptiveMenuAction(
+              title: 'Extra Option 2',
+              onPressed: () {
+                debugPrint('Extra Option 2 was tapped!');
+              },
+            ),
+            AdaptiveMenuAction.destructive(
+              title: 'Extra Option 3',
+              description: 'This is a destructive option',
+              onPressed: () {
+                debugPrint('Extra Option 3 was tapped!');
+              },
+            ),
+          ],
         ),
         AdaptiveMenuGroup.inline(
           actions: [
@@ -129,7 +147,7 @@ class _TrailingWidgetState extends State<TrailingWidget> {
           ],
         ),
       ],
-      child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
+      child: widget.child,
     );
   }
 }
