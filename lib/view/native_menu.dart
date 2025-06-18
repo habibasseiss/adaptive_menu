@@ -1,62 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-enum NativeMenuActionStyle { normal, destructive }
-
-enum NativeMenuGroupStyle { normal, inline }
-
-abstract class NativeMenuItem {}
-
-class NativeMenuGroup extends NativeMenuItem {
-  final String? title;
-  final IconData? icon;
-  final List<NativeMenuItem> actions;
-  final NativeMenuGroupStyle style;
-
-  NativeMenuGroup({
-    required this.title,
-    required this.actions,
-    this.style = NativeMenuGroupStyle.normal,
-    this.icon,
-  });
-
-  NativeMenuGroup.inline({
-    required this.actions,
-    this.title,
-    this.style = NativeMenuGroupStyle.inline,
-  }) : icon = null;
-}
-
-class NativeMenuAction extends NativeMenuItem {
-  final String id;
-  final String title;
-  final IconData? icon;
-  final VoidCallback? onPressed;
-  final NativeMenuActionStyle style;
-  final bool? checked;
-  final String? description;
-
-  NativeMenuAction({
-    required this.title,
-    this.icon,
-    this.onPressed,
-    this.checked,
-    this.description,
-  })
-    : id = UniqueKey().toString(),
-      style = NativeMenuActionStyle.normal;
-
-  NativeMenuAction.destructive({required this.title, this.icon, this.onPressed, this.description})
-    : id = UniqueKey().toString(),
-      style = NativeMenuActionStyle.destructive,
-      checked = false;
-}
+import 'package:native_menu/adaptive_menu.dart';
 
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
   final Color? backgroundColor;
-  final List<NativeMenuItem> items;
+  final List<AdaptiveMenuItem> items;
   final Size size;
   final VoidCallback? onPressed;
 
@@ -152,9 +102,9 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     return params;
   }
 
-  List<Map<String, dynamic>> _serializeMenuItems(List<NativeMenuItem> items) {
+  List<Map<String, dynamic>> _serializeMenuItems(List<AdaptiveMenuItem> items) {
     return items.map((item) {
-      if (item is NativeMenuAction) {
+      if (item is AdaptiveMenuAction) {
         return {
           'type': 'action',
           'id': item.id,
@@ -169,7 +119,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
               'fontPackage': item.icon!.fontPackage,
             },
         };
-      } else if (item is NativeMenuGroup) {
+      } else if (item is AdaptiveMenuGroup) {
         return {
           'type': 'group',
           'title': item.title,
@@ -202,12 +152,12 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     }
   }
 
-  NativeMenuAction? _findActionById(String id, List<NativeMenuItem> items) {
+  AdaptiveMenuAction? _findActionById(String id, List<AdaptiveMenuItem> items) {
     for (final item in items) {
-      if (item is NativeMenuAction && item.id == id) {
+      if (item is AdaptiveMenuAction && item.id == id) {
         return item;
       }
-      if (item is NativeMenuGroup) {
+      if (item is AdaptiveMenuGroup) {
         final action = _findActionById(id, item.actions);
         if (action != null) {
           return action;

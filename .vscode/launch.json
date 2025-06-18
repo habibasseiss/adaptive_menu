@@ -5,9 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Example App",
+            "name": "Cupertino App",
             "request": "launch",
-            "program": "example/lib/main.dart",
+            "program": "example/lib/main_cupertino.dart",
+            "type": "dart"
+        },
+        {
+            "name": "Material App",
+            "request": "launch",
+            "program": "example/lib/main_material.dart",
             "type": "dart"
         }
     ]
