@@ -49,9 +49,9 @@ class AdaptiveMenuAction extends AdaptiveMenuItem {
     this.onPressed,
     this.checked,
     this.description,
+    this.style = AdaptiveMenuActionStyle.normal,
   })
-    : id = UniqueKey().toString(),
-      style = AdaptiveMenuActionStyle.normal;
+    : id = UniqueKey().toString();
 
   AdaptiveMenuAction.destructive({required this.title, this.icon, this.onPressed, this.description})
     : id = UniqueKey().toString(),
