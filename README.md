@@ -1,12 +1,15 @@
 # Adaptive Menu
 
-A Flutter package that provides an adaptive menu widget. It displays a native iOS pull-down menu (`UIMenu`) on iOS and a Material Design popup menu (`PopupMenuButton`) on other platforms. This ensures your app feels native on every device, especially on iOS.
+A Flutter package that provides an adaptive menu widget. It displays a native iOS pull-down menu on iOS and a Material Design popup menu on other platforms. This ensures your app feels native on every device, especially on iOS.
 
 ## Features
 
-- **Platform-Adaptive:** Automatically uses `UIMenu` on iOS for a native feel and falls back to `PopupMenuButton` on Android and other platforms.
-- **Easy to Use:** A simple `AdaptiveMenu` widget that takes a list of actions and a child to display.
-- **Customizable:** Supports menu groups, dividers, icons, and destructive actions.
+- **Platform-Adaptive:** Automatically uses `UIMenu` on iOS for a native feel
+and falls back to `PopupMenuButton` on Android and other platforms.
+- **Easy to Use:** A simple `AdaptiveMenu` widget that takes a list of actions
+and a child to display.
+- **Customizable:** Supports menu groups, dividers, icons, and destructive
+actions.
 
 ## Getting Started
 
@@ -18,6 +21,28 @@ dependencies:
 ```
 
 Then run `flutter pub get`.
+
+### Installation for iOS
+
+This package expects the font file for the icons you want to use in the menu to
+be available in the native iOS project. Any font file used in Flutter's
+`IconData` issupported.
+
+The following example adds the `CupertinoIcons` font file to the native iOS
+project. We provide the font file in the `assets/fonts` directory.
+
+1. In Xcode, drag and drop the `CupertinoIcons.ttf` font file to the `Runner`
+directory. Use "Copy files to destination" action and make sure the Runner
+target is checked. Click "Finish".
+
+2. Edit the `Info.plist` file to add the font file to the `UIAppFonts` key.
+
+```xml
+<key>UIAppFonts</key>
+<array>
+  <string>CupertinoIcons.ttf</string>
+</array>
+```
 
 ## Usage
 
@@ -74,7 +99,8 @@ class MenuDemo extends StatelessWidget {
 
 ### Forcing a Menu Type
 
-By default, `AdaptiveMenu` chooses the menu type based on the platform. However, you can force a specific type using the `type` parameter:
+By default, `AdaptiveMenu` chooses the menu type based on the platform. However,
+you can force a specific type using the `type` parameter:
 
 ```dart
 AdaptiveMenu(
@@ -87,3 +113,15 @@ AdaptiveMenu(
 )
 ```
 
+### Limitations
+
+- The provided `MaterialMenu` uses Flutter's built-in `MenuAnchor` widget, which
+currently doesn't support customizing animations. Refer to
+[this issue](https://github.com/flutter/flutter/pull/167806) for more
+information.
+
+- Currently, this package only supports triggering a menu with an `Icon` widget.
+Support for other widgets will be added in the future.
+
+- Due to the way we call native Swift code, we must set the specific `Size` of
+the icon.

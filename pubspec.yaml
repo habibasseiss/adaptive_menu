@@ -1,5 +1,5 @@
-name: native_menu
-description: "A new Flutter plugin project."
+name: adaptive_menu
+description: "A Flutter package that allows displaying a native iOS pull-down menu on iOS and a Material Design popup menu on other platforms"
 version: 0.0.1
 homepage: digizorg.app
 

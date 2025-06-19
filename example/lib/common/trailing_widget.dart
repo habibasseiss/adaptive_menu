@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:native_menu/adaptive_menu.dart';
+import 'package:adaptive_menu/adaptive_menu.dart';
 
 class TrailingWidget extends StatefulWidget {
   const TrailingWidget({required this.child, this.type, super.key});

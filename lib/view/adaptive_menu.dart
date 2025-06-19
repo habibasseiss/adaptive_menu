@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:native_menu/adaptive_menu.dart';
-import 'package:native_menu/view/material_menu.dart';
+import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:adaptive_menu/view/material_menu.dart';
 
 enum AdaptiveMenuType { material, native }
 

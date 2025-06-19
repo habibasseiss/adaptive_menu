@@ -43,6 +43,7 @@ class AdaptiveMenuAction extends AdaptiveMenuItem {
   final bool? checked;
   final String? description;
 
+  /// Creates a regular adaptive menu action.
   AdaptiveMenuAction({
     required this.title,
     this.icon,
@@ -50,11 +51,16 @@ class AdaptiveMenuAction extends AdaptiveMenuItem {
     this.checked,
     this.description,
     this.style = AdaptiveMenuActionStyle.normal,
-  })
-    : id = UniqueKey().toString();
+  }) : id = UniqueKey().toString();
 
-  AdaptiveMenuAction.destructive({required this.title, this.icon, this.onPressed, this.description})
-    : id = UniqueKey().toString(),
-      style = AdaptiveMenuActionStyle.destructive,
-      checked = false;
+  /// Creates a destructive adaptive menu action. This will render with a red
+  /// color on iOS, but regular color on Android due to Material specification.
+  AdaptiveMenuAction.destructive({
+    required this.title,
+    this.icon,
+    this.onPressed,
+    this.description,
+  }) : id = UniqueKey().toString(),
+       style = AdaptiveMenuActionStyle.destructive,
+       checked = false;
 }

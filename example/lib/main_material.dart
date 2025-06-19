@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:native_menu/adaptive_menu.dart';
-import 'package:native_menu_example/common/trailing_widget.dart';
+import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:adaptive_menu_example/common/trailing_widget.dart';
 
 void main() {
   runApp(const MyMaterialApp());

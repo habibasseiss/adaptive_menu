@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:native_menu/adaptive_menu.dart';
+import 'package:adaptive_menu/adaptive_menu.dart';
 
 class MaterialMenu extends StatelessWidget {
   const MaterialMenu({

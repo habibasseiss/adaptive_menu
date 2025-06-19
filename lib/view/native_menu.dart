@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:native_menu/adaptive_menu.dart';
+import 'package:adaptive_menu/adaptive_menu.dart';
 
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
