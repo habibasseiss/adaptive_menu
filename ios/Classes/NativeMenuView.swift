@@ -31,16 +31,19 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         createNativeView(view: _view, arguments: args)
     }
 
-    func view() -> UIView {
+    public func view() -> UIView {
         return _view
     }
 
     // Handles method calls from Dart
-    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "update":
             // When an update call is received, apply the new properties
             updateButtonProperties(with: call.arguments)
+            result(nil)
+        case "updateSize":
+            updateSize(with: call.arguments)
             result(nil)
         default:
             result(FlutterMethodNotImplemented)
@@ -50,12 +53,18 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     func createNativeView(view platformRootView: UIView, arguments args: Any?){
         platformRootView.backgroundColor = UIColor.clear
 
-        // Apply initial properties
-        updateButtonProperties(with: args)
-
-        _button.backgroundColor = .clear
-        _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        // Configure the button
+        _button.backgroundColor = UIColor.clear
+        _button.frame = platformRootView.bounds
+        
+        // Add the button to the view
         platformRootView.addSubview(_button)
+        
+        // Set initial properties
+        updateButtonProperties(with: args)
+        
+        // Add target action for button tap
+        _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
     }
 
     // A single function to configure the button's properties from a map of arguments
@@ -95,6 +104,29 @@ class NativeMenuView: NSObject, FlutterPlatformView {
 
     @objc private func buttonTapped() {
         _methodChannel.invokeMethod("buttonTapped", arguments: nil)
+    }
+    
+    // Updates the size of the button and view when the Flutter widget size changes
+    private func updateSize(with args: Any?) {
+        guard let arguments = args as? [String: Any],
+              let sizeMap = arguments["size"] as? [String: Double],
+              let width = sizeMap["width"],
+              let height = sizeMap["height"] else {
+            return
+        }
+        
+        // Create a new frame with the updated size
+        let newFrame = CGRect(x: 0, y: 0, width: width, height: height)
+        
+        // Update both the view and button frames to ensure proper sizing
+        _view.frame = newFrame
+        _button.frame = _view.bounds
+        
+        // Force layout update
+        _view.setNeedsLayout()
+        _view.layoutIfNeeded()
+        _button.setNeedsLayout()
+        _button.layoutIfNeeded()
     }
 
     private func createMenuItems(from itemsData: [[String: Any]]) -> [UIMenuElement] {

@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 class MaterialMenu extends StatelessWidget {
   const MaterialMenu({
     required this.items,
-    required this.size,
     required this.child,
+    this.size,
     this.onPressed,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
-  final Size size;
+  final Size? size;
   final VoidCallback? onPressed;
   final Widget child;
 
@@ -152,10 +152,15 @@ class MaterialMenu extends StatelessWidget {
               child: child,
             );
 
-            return SizedBox.fromSize(
-              size: size,
-              child: Center(child: effectiveChild),
-            );
+            // If size is provided, use it; otherwise, let the child determine its own size
+            if (size != null) {
+              return SizedBox.fromSize(
+                size: size,
+                child: Center(child: effectiveChild),
+              );
+            } else {
+              return effectiveChild;
+            }
           },
     );
   }

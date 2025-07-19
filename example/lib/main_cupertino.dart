@@ -40,7 +40,42 @@ class MyHomePage extends StatelessWidget {
           backgroundColor: Colors.transparent,
           body: SizedBox(
             width: double.infinity,
-            child: Center(child: _WidgetMenu()),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _WidgetMenu(),
+                  CupertinoListSection.insetGrouped(
+                    children: [
+                      AdaptiveMenu(
+                        type: AdaptiveMenuType.material,
+                        items: [
+                          AdaptiveMenuAction(
+                            title: 'Select',
+                            icon: CupertinoIcons.check_mark_circled,
+                            onPressed: () {
+                              debugPrint('Select was tapped!');
+                            },
+                          ),
+                          AdaptiveMenuAction(
+                            title: 'New Folder',
+                            icon: CupertinoIcons.folder_badge_plus,
+                            onPressed: () {
+                              debugPrint('New Folder was tapped!');
+                            },
+                          ),
+                        ],
+                        child: CupertinoListTile.notched(
+                          leading: FlutterLogo(),
+                          title: Text('One-line with both widgets'),
+                          trailing: Icon(Icons.unfold_more),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
           bottomNavigationBar: _BottomNavigationBar(),
         ),
@@ -152,7 +187,6 @@ class _WidgetMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdaptiveMenu(
       type: AdaptiveMenuType.native,
-      size: const Size(100, 100),
       items: [
         AdaptiveMenuAction(
           title: 'Select',
@@ -187,8 +221,6 @@ class _TextNativeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdaptiveMenu(
-      // type: AdaptiveMenuType.material,
-      size: const Size(100, 30),
       items: [
         AdaptiveMenuAction(
           title: 'Select',

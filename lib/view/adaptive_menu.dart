@@ -8,15 +8,15 @@ enum AdaptiveMenuType { material, native }
 class AdaptiveMenu extends StatelessWidget {
   const AdaptiveMenu({
     required this.items,
-    required this.size,
     required this.child,
+    this.size,
     this.type,
     this.onPressed,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
-  final Size size;
+  final Size? size;
   final VoidCallback? onPressed;
   final AdaptiveMenuType? type;
   final Widget child;
