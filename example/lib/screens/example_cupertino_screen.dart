@@ -3,82 +3,71 @@ import 'package:adaptive_menu_example/common/trailing_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyCupertinoApp());
-}
-
-class MyCupertinoApp extends StatelessWidget {
-  const MyCupertinoApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      home: const MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+class ExampleCupertinoScreen extends StatelessWidget {
+  const ExampleCupertinoScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Adaptive Menu Example'),
-        leading: _TextNativeButton(),
+        leading: _BackButton(),
         trailing: TrailingWidget(
           type: AdaptiveMenuType.native,
-          child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
+          child: CupertinoButton(
+            onPressed: () {},
+            padding: EdgeInsets.zero,
+            child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
+          ),
         ),
-        padding: EdgeInsetsDirectional.only(start: 16, end: 0),
+        padding: EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
       ),
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _WidgetMenu(),
-                  CupertinoListSection.insetGrouped(
-                    children: [
-                      AdaptiveMenu(
-                        type: AdaptiveMenuType.material,
-                        items: [
-                          AdaptiveMenuAction(
-                            title: 'Select',
-                            icon: CupertinoIcons.check_mark_circled,
-                            onPressed: () {
-                              debugPrint('Select was tapped!');
-                            },
-                          ),
-                          AdaptiveMenuAction(
-                            title: 'New Folder',
-                            icon: CupertinoIcons.folder_badge_plus,
-                            onPressed: () {
-                              debugPrint('New Folder was tapped!');
-                            },
-                          ),
-                        ],
-                        child: CupertinoListTile.notched(
-                          leading: FlutterLogo(),
-                          title: Text('One-line with both widgets'),
-                          trailing: Icon(Icons.unfold_more),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _WidgetMenu(),
+              const SizedBox(height: 32),
+              _TextNativeButton(),
+              const SizedBox(height: 32),
+              _ListItemButton(),
+            ],
           ),
           bottomNavigationBar: _BottomNavigationBar(),
         ),
+      ),
+    );
+  }
+}
+
+class _BackButton extends StatelessWidget {
+  const _BackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AdaptiveMenu(
+      onPressed: () {
+        Navigator.pop(context);
+      },
+      items: [
+        AdaptiveMenuAction(
+          title: 'Example Action 1',
+          onPressed: () {
+            debugPrint('Example Action 1 was tapped!');
+          },
+        ),
+        AdaptiveMenuAction(
+          title: 'Example Action 2',
+          onPressed: () {
+            debugPrint('Example Action 2 was tapped!');
+          },
+        ),
+      ],
+      child: CupertinoButton(
+        onPressed: () {},
+        padding: EdgeInsets.zero,
+        child: Icon(CupertinoIcons.back, size: 26),
       ),
     );
   }
@@ -115,7 +104,7 @@ class _BottomNavigationBar extends StatelessWidget {
               onPressed: () {
                 debugPrint('NativeMenuWidget was tapped!');
               },
-              size: const Size(64, 32),
+              // size: const Size(64, 32),
               items: [
                 AdaptiveMenuAction(
                   title: 'New Tab',
@@ -171,7 +160,10 @@ class _BottomNavigationBar extends StatelessWidget {
                   },
                 ),
               ],
-              child: Icon(CupertinoIcons.square_on_square, size: 24),
+              child: CupertinoButton(
+                onPressed: () {},
+                child: Icon(CupertinoIcons.square_on_square, size: 24),
+              ),
             ),
           ],
         ),
@@ -237,7 +229,46 @@ class _TextNativeButton extends StatelessWidget {
           },
         ),
       ],
-      child: const Text('Leading'),
+      child: CupertinoButton(
+        onPressed: () {},
+        padding: EdgeInsets.zero,
+        child: const Text('Menu'),
+      ),
+    );
+  }
+}
+
+class _ListItemButton extends StatelessWidget {
+  const _ListItemButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoListSection.insetGrouped(
+      children: [
+        AdaptiveMenu(
+          items: [
+            AdaptiveMenuAction(
+              title: 'Select',
+              icon: CupertinoIcons.check_mark_circled,
+              onPressed: () {
+                debugPrint('Select was tapped!');
+              },
+            ),
+            AdaptiveMenuAction(
+              title: 'New Folder',
+              icon: CupertinoIcons.folder_badge_plus,
+              onPressed: () {
+                debugPrint('New Folder was tapped!');
+              },
+            ),
+          ],
+          child: CupertinoListTile.notched(
+            leading: FlutterLogo(),
+            title: Text('One-line with both widgets'),
+            trailing: Icon(Icons.unfold_more),
+          ),
+        ),
+      ],
     );
   }
 }

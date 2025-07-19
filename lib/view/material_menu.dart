@@ -140,6 +140,7 @@ class MaterialMenu extends StatelessWidget {
             Widget? anchorChild,
           ) {
             final Widget effectiveChild = GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () {
                 // Call the user-provided onPressed callback for the menu trigger
                 onPressed?.call();

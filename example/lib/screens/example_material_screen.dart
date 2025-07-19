@@ -1,26 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:adaptive_menu_example/common/trailing_widget.dart';
+import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyMaterialApp());
-}
-
-class MyMaterialApp extends StatelessWidget {
-  const MyMaterialApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+class ExampleMaterialScreen extends StatelessWidget {
+  const ExampleMaterialScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
