@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:adaptive_menu_example/common/trailing_widget.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyCupertinoApp());
@@ -28,6 +28,7 @@ class MyHomePage extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Adaptive Menu Example'),
+        leading: _TextNativeButton(),
         trailing: TrailingWidget(
           type: AdaptiveMenuType.native,
           child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
@@ -39,14 +40,10 @@ class MyHomePage extends StatelessWidget {
           backgroundColor: Colors.transparent,
           body: SizedBox(
             width: double.infinity,
-            child: Image.asset(
-              'assets/image.png',
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
-            ),
+            child: Center(child: _WidgetMenu()),
           ),
           bottomNavigationBar: _BottomNavigationBar(),
-      ),
+        ),
       ),
     );
   }
@@ -144,6 +141,71 @@ class _BottomNavigationBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _WidgetMenu extends StatelessWidget {
+  const _WidgetMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return AdaptiveMenu(
+      type: AdaptiveMenuType.native,
+      size: const Size(100, 100),
+      items: [
+        AdaptiveMenuAction(
+          title: 'Select',
+          icon: CupertinoIcons.check_mark_circled,
+          onPressed: () {
+            debugPrint('Select was tapped!');
+          },
+        ),
+        AdaptiveMenuAction(
+          title: 'New Folder',
+          icon: CupertinoIcons.folder_badge_plus,
+          onPressed: () {
+            debugPrint('New Folder was tapped!');
+          },
+        ),
+      ],
+      child: Card(
+        color: Colors.red,
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: Center(child: const Text('Card')),
+        ),
+      ),
+    );
+  }
+}
+
+class _TextNativeButton extends StatelessWidget {
+  const _TextNativeButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AdaptiveMenu(
+      // type: AdaptiveMenuType.material,
+      size: const Size(100, 30),
+      items: [
+        AdaptiveMenuAction(
+          title: 'Select',
+          icon: CupertinoIcons.check_mark_circled,
+          onPressed: () {
+            debugPrint('Select was tapped!');
+          },
+        ),
+        AdaptiveMenuAction(
+          title: 'New Folder',
+          icon: CupertinoIcons.folder_badge_plus,
+          onPressed: () {
+            debugPrint('New Folder was tapped!');
+          },
+        ),
+      ],
+      child: const Text('Leading'),
     );
   }
 }

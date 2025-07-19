@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:flutter/material.dart';
 
 class MaterialMenu extends StatelessWidget {
   const MaterialMenu({
@@ -139,26 +139,18 @@ class MaterialMenu extends StatelessWidget {
             MenuController controller,
             Widget? anchorChild,
           ) {
-            Widget? effectiveChild;
-
-            if (child is Icon) {
-              final childIcon = (child as Icon);
-
-              effectiveChild = IconButton(
-                icon: Icon(childIcon.icon, size: childIcon.size),
-                onPressed: () {
-                  onPressed
-                      ?.call(); // Call the user-provided onPressed callback for the menu trigger
-                  if (controller.isOpen) {
-                    controller.close();
-                  } else {
-                    controller.open();
-                  }
-                },
-              );
-            } else {
-              throw Exception('Unsupported child type: ${child.runtimeType}');
-            }
+            final Widget effectiveChild = GestureDetector(
+              onTap: () {
+                // Call the user-provided onPressed callback for the menu trigger
+                onPressed?.call();
+                if (controller.isOpen) {
+                  controller.close();
+                } else {
+                  controller.open();
+                }
+              },
+              child: child,
+            );
 
             return SizedBox.fromSize(
               size: size,

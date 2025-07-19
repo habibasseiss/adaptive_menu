@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:adaptive_menu/view/material_menu.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 enum AdaptiveMenuType { material, native }
 
@@ -23,8 +23,6 @@ class AdaptiveMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    assert(child is Icon, 'Currently, child must be an Icon widget');
-
     final nativeMenu = NativeMenuWidget(
       items: items,
       size: size,

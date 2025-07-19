@@ -53,6 +53,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         // Apply initial properties
         updateButtonProperties(with: args)
 
+        _button.backgroundColor = .clear
         _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
         platformRootView.addSubview(_button)
     }
@@ -60,8 +61,6 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     // A single function to configure the button's properties from a map of arguments
     private func updateButtonProperties(with args: Any?) {
         guard let arguments = args as? [String: Any] else {
-            // Handle case where there are no arguments
-            _button.setTitle("Default Native Title", for: .normal)
             _button.backgroundColor = UIColor.clear
             _button.frame = _view.bounds
             _button.menu = nil
@@ -69,72 +68,21 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             return
         }
 
-        // Reset button content before setting new content
+        // The button is now just a transparent tappable area.
+        // Visuals are handled entirely by the Flutter child widget.
         _button.setTitle(nil, for: .normal)
         _button.setImage(nil, for: .normal)
+        _button.backgroundColor = UIColor.clear
 
-        // Set content from the 'child' parameter
-        if let childMap = arguments["child"] as? [String: Any],
-           let type = childMap["type"] as? String {
-            
-            if type == "text" {
-                let text = childMap["text"] as? String ?? ""
-                _button.setTitle(text, for: .normal)
-            } else if type == "icon" {
-                if let iconData = childMap["icon"] as? [String: Any],
-                   let codePoint = iconData["codePoint"] as? Int,
-                   let fontFamily = iconData["fontFamily"] as? String {
-                    
-                    let iconSize = childMap["size"] as? CGFloat ?? 24.0
-                    var iconColor = _button.tintColor ?? .blue
-                    
-                    if let colorMap = childMap["color"] as? [String: Double],
-                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
-                        iconColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
-                    }
-                    
-                    // For the button icon, we have two options:
-                    // 1. If a specific color is provided, use that color directly
-                    // 2. Otherwise, use a template image that will adapt to the button's tint color
-                    if let colorMap = childMap["color"] as? [String: Double],
-                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
-                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
-                            _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
-                        }
-                    } else {
-                        // No specific color provided, use template image that will adapt to tint color
-                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize) {
-                            _button.setImage(iconImage, for: .normal)
-                        }
-                    }
-                }
-            }
-        } else {
-            // Fallback if 'child' is not provided correctly
-            _button.setTitle("Invalid Content", for: .normal)
-        }
-
-        // Set background color
-        if let bgColorMap = arguments["backgroundColor"] as? [String: Double],
-           let red = bgColorMap["red"],
-           let green = bgColorMap["green"],
-           let blue = bgColorMap["blue"],
-           let alpha = bgColorMap["alpha"] {
-            _button.backgroundColor = UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha))
-        } else {
-            _button.backgroundColor = UIColor.clear
-        }
-        
-        // Set the frame from the 'size' argument
+        // --- Configure Button Frame ---
         if let sizeMap = arguments["size"] as? [String: Double],
-           let width = sizeMap["width"],
-           let height = sizeMap["height"] {
+           let width = sizeMap["width"], let height = sizeMap["height"] {
             _button.frame = CGRect(x: 0, y: 0, width: width, height: height)
         } else {
             _button.frame = _view.bounds
         }
         
-        // Handle actions for pull-down menu
+        // --- Configure Menu ---
         if let itemsArray = arguments["items"] as? [[String: Any]], !itemsArray.isEmpty {
             let menuElements = createMenuItems(from: itemsArray)
             _button.menu = UIMenu(title: "", children: menuElements)
@@ -142,14 +90,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             _button.menu = nil
         }
 
-        let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
-        _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
-
-        // These can also be made configurable
-        // Use system blue color which adapts to light/dark mode
-        _button.setTitleColor(UIColor.systemBlue, for: .normal)
-        _button.tintColor = UIColor.systemBlue // Set tint color for template images
-        _button.layer.cornerRadius = 8
+        _button.showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? false
     }
 
     @objc private func buttonTapped() {

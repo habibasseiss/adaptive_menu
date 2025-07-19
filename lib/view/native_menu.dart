@@ -1,11 +1,10 @@
+import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:adaptive_menu/adaptive_menu.dart';
 
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
-  final Color? backgroundColor;
   final List<AdaptiveMenuItem> items;
   final Size size;
   final VoidCallback? onPressed;
@@ -14,9 +13,8 @@ class NativeMenuWidget extends StatefulWidget {
     super.key,
     required this.child,
     required this.items,
-    required this.size,
-    this.backgroundColor,
     this.onPressed,
+    this.size = const Size(44, 44),
   });
 
   @override
@@ -40,9 +38,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   @override
   void didUpdateWidget(NativeMenuWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.child != oldWidget.child ||
-        widget.backgroundColor != oldWidget.backgroundColor ||
-        widget.size != oldWidget.size ||
+    if (widget.size != oldWidget.size ||
         !listEquals(widget.items, oldWidget.items) ||
         widget.onPressed != oldWidget.onPressed) {
       _updateNativeView();
@@ -53,43 +49,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
   }
 
-  Map<String, double> _serializeColor(Color color) {
-    return {
-      'red': ((color.r * 255.0).round() & 0xff) / 255.0,
-      'green': ((color.g * 255.0).round() & 0xff) / 255.0,
-      'blue': ((color.b * 255.0).round() & 0xff) / 255.0,
-      'alpha': ((color.a * 255.0).round() & 0xff) / 255.0,
-    };
-  }
-
   Map<String, dynamic> _buildParams() {
     final Map<String, dynamic> params = <String, dynamic>{};
-
-    final child = widget.child;
-    if (child is Text && child.data != null) {
-      params['child'] = {'type': 'text', 'text': child.data!};
-    } else if (child is Icon && child.icon is IconData) {
-      final icon = child.icon as IconData;
-      final Map<String, dynamic> iconParams = {
-        'type': 'icon',
-        'icon': {
-          'codePoint': icon.codePoint,
-          'fontFamily': icon.fontFamily,
-          'fontPackage': icon.fontPackage,
-        },
-        'size': child.size,
-      };
-      if (child.color != null) {
-        iconParams['color'] = _serializeColor(child.color!);
-      }
-      params['child'] = iconParams;
-    } else {
-      params['child'] = {'type': 'text', 'text': ''};
-    }
-
-    if (widget.backgroundColor != null) {
-      params['backgroundColor'] = _serializeColor(widget.backgroundColor!);
-    }
 
     params['size'] = {'width': widget.size.width, 'height': widget.size.height};
 
@@ -174,15 +135,20 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     final Map<String, dynamic> creationParams = _buildParams();
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return SizedBox(
-        width: widget.size.width,
-        height: widget.size.height,
-        child: UiKitView(
-          viewType: viewType,
-          creationParams: creationParams,
-          creationParamsCodec: const StandardMessageCodec(),
-          onPlatformViewCreated: _onPlatformViewCreated,
-        ),
+      return Stack(
+        children: [
+          widget.child,
+          SizedBox(
+            width: widget.size.width,
+            height: widget.size.height,
+            child: UiKitView(
+              viewType: viewType,
+              creationParams: creationParams,
+              creationParamsCodec: const StandardMessageCodec(),
+              onPlatformViewCreated: _onPlatformViewCreated,
+            ),
+          ),
+        ],
       );
     } else {
       return Text('$viewType is not available on this platform.');
