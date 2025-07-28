@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:flutter/material.dart';
 
 class MaterialMenu extends StatelessWidget {
   const MaterialMenu({
     required this.items,
-    required this.size,
     required this.child,
+    this.size,
     this.onPressed,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
-  final Size size;
+  final Size? size;
   final VoidCallback? onPressed;
   final Widget child;
 
