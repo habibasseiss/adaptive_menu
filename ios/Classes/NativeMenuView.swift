@@ -52,6 +52,12 @@ class NativeMenuView: NSObject, FlutterPlatformView {
 
     func createNativeView(view platformRootView: UIView, arguments args: Any?){
         platformRootView.backgroundColor = UIColor.clear
+        
+        // Configure button for proper alignment
+        _button.contentMode = .scaleToFill
+        _button.contentHorizontalAlignment = .fill
+        _button.contentVerticalAlignment = .fill
+        _button.imageView?.contentMode = .scaleAspectFit
 
         // Apply initial properties
         updateButtonProperties(with: args)
@@ -144,18 +150,24 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             return
         }
         
-        // Create a new frame with the updated size
+        // Create a new frame with the updated size - use exact dimensions
         let newFrame = CGRect(x: 0, y: 0, width: width, height: height)
         
         // Update both the view and button frames to ensure proper sizing
         _view.frame = newFrame
-        _button.frame = _view.bounds
+        _button.frame = CGRect(origin: .zero, size: newFrame.size)
         
-        // Force layout update
-        _view.setNeedsLayout()
-        _view.layoutIfNeeded()
-        _button.setNeedsLayout()
-        _button.layoutIfNeeded()
+        // Ensure image view is properly sized
+        _button.imageView?.frame = _button.bounds
+        
+        // Force layout update with animation to ensure smooth transitions
+        UIView.animate(withDuration: 0.0) {
+            self._view.setNeedsLayout()
+            self._view.layoutIfNeeded()
+            self._button.setNeedsLayout()
+            self._button.layoutIfNeeded()
+            self._button.setNeedsDisplay()
+        }
     }
 
     private func createMenuItems(from itemsData: [[String: Any]]) -> [UIMenuElement] {

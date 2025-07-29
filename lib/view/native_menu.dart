@@ -46,7 +46,18 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   }
 
   Future<void> _updateNativeView() async {
+    // First update the parameters
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
+
+    // Force a size update to ensure proper alignment
+    final _AutoSizeNativeMenuState? state = context
+        .findAncestorStateOfType<_AutoSizeNativeMenuState>();
+    if (state != null) {
+      // Schedule this for the next frame to ensure all layout is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        state._updateChildSize();
+      });
+    }
   }
 
   Map<String, dynamic> _buildParams() {
@@ -278,17 +289,26 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
+      fit: StackFit.passthrough,
       children: [
         // Use WidgetAsImage to capture the child widget as an image
-        WidgetAsImage(
-          key: _childKey,
-          onImageCaptured: _handleImageCaptured,
-          child: widget.child,
+        Opacity(
+          opacity: 0.3,
+          child: WidgetAsImage(
+            key: _childKey,
+            onImageCaptured: _handleImageCaptured,
+            child: widget.child,
+          ),
         ),
 
         // The native view is only built after the child's size is known
         if (_childSize != null)
-          Positioned.fill(
+          Positioned(
+            left: 0,
+            top: 0,
+            width: _childSize!.width,
+            height: _childSize!.height,
             child: UiKitView(
               viewType: widget.viewType,
               creationParams: widget.creationParams,
