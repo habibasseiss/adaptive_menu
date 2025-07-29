@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:flutter/cupertino.dart';
 
 class TrailingWidget extends StatefulWidget {
   const TrailingWidget({required this.child, this.type, super.key});
@@ -20,7 +20,6 @@ class _TrailingWidgetState extends State<TrailingWidget> {
   Widget build(BuildContext context) {
     return AdaptiveMenu(
       type: widget.type,
-      size: const Size(56, 40),
       items: [
         AdaptiveMenuAction(
           title: 'Select',

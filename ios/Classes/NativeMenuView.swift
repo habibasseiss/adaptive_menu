@@ -80,52 +80,28 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         if let childMap = arguments["child"] as? [String: Any],
            let type = childMap["type"] as? String {
             
-            if type == "text" {
-                let text = childMap["text"] as? String ?? ""
-                _button.setTitle(text, for: .normal)
-            } else if type == "icon" {
-                if let iconData = childMap["icon"] as? [String: Any],
-                   let codePoint = iconData["codePoint"] as? Int,
-                   let fontFamily = iconData["fontFamily"] as? String {
-                    
-                    let iconSize = childMap["size"] as? CGFloat ?? 24.0
-                    var iconColor = _button.tintColor ?? .blue
-                    
-                    if let colorMap = childMap["color"] as? [String: Double],
-                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
-                        iconColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
-                    }
-                    
-                    // For the button icon, we have two options:
-                    // 1. If a specific color is provided, use that color directly
-                    // 2. Otherwise, use a template image that will adapt to the button's tint color
-                    if let colorMap = childMap["color"] as? [String: Double],
-                       let red = colorMap["red"], let green = colorMap["green"], let blue = colorMap["blue"], let alpha = colorMap["alpha"] {
-                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: iconColor) {
-                            _button.setImage(iconImage.withRenderingMode(.alwaysOriginal), for: .normal)
-                        }
-                    } else {
-                        // No specific color provided, use template image that will adapt to tint color
-                        if let iconImage = imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize) {
-                            _button.setImage(iconImage, for: .normal)
-                        }
+            if type == "image" {
+                // Handle image data
+                if let flutterData = childMap["imageBytes"] as? FlutterStandardTypedData {
+                    if let image = UIImage(data: flutterData.data) {
+                        // Set the image on the button
+                        _button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
+                        
+                        // Configure button to properly display the image
+                        _button.imageView?.contentMode = .scaleAspectFit
+                        _button.contentHorizontalAlignment = .fill
+                        _button.contentVerticalAlignment = .fill
+                        _button.imageEdgeInsets = UIEdgeInsets.zero
                     }
                 }
+            } else if type == "empty" {
+                // Clear button content while waiting for image
+                _button.setImage(nil, for: .normal)
+                _button.setTitle(nil, for: .normal)
             }
         } else {
             // Fallback if 'child' is not provided correctly
             _button.setTitle("Invalid Content", for: .normal)
-        }
-
-        // Set background color
-        if let bgColorMap = arguments["backgroundColor"] as? [String: Double],
-           let red = bgColorMap["red"],
-           let green = bgColorMap["green"],
-           let blue = bgColorMap["blue"],
-           let alpha = bgColorMap["alpha"] {
-            _button.backgroundColor = UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha))
-        } else {
-            _button.backgroundColor = UIColor.clear
         }
         
         // Set the frame from the 'size' argument
@@ -147,12 +123,6 @@ class NativeMenuView: NSObject, FlutterPlatformView {
 
         let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
         _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
-
-        // These can also be made configurable
-        // Use system blue color which adapts to light/dark mode
-        _button.setTitleColor(UIColor.systemBlue, for: .normal)
-        _button.tintColor = UIColor.systemBlue // Set tint color for template images
-        _button.layer.cornerRadius = 8
     }
 
     @objc private func buttonTapped() {
@@ -288,5 +258,4 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         
         return image
     }
-
 }

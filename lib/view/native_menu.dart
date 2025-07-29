@@ -1,11 +1,11 @@
 import 'package:adaptive_menu/adaptive_menu.dart';
+import 'package:adaptive_menu/util/widget_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
-  final Color? backgroundColor;
   final List<AdaptiveMenuItem> items;
   final Size? size;
   final VoidCallback? onPressed;
@@ -15,7 +15,6 @@ class NativeMenuWidget extends StatefulWidget {
     required this.child,
     required this.items,
     this.size,
-    this.backgroundColor,
     this.onPressed,
   });
 
@@ -25,6 +24,7 @@ class NativeMenuWidget extends StatefulWidget {
 
 class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   MethodChannel? _instanceMethodChannel; // Instance-specific channel
+  Uint8List? _capturedImage;
 
   @override
   void initState() {
@@ -41,7 +41,6 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   void didUpdateWidget(NativeMenuWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.child != oldWidget.child ||
-        widget.backgroundColor != oldWidget.backgroundColor ||
         widget.size != oldWidget.size ||
         !listEquals(widget.items, oldWidget.items) ||
         widget.onPressed != oldWidget.onPressed) {
@@ -53,42 +52,18 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
   }
 
-  Map<String, double> _serializeColor(Color color) {
-    return {
-      'red': ((color.r * 255.0).round() & 0xff) / 255.0,
-      'green': ((color.g * 255.0).round() & 0xff) / 255.0,
-      'blue': ((color.b * 255.0).round() & 0xff) / 255.0,
-      'alpha': ((color.a * 255.0).round() & 0xff) / 255.0,
-    };
-  }
-
   Map<String, dynamic> _buildParams() {
     final Map<String, dynamic> params = <String, dynamic>{};
 
-    final child = widget.child;
-    if (child is Text && child.data != null) {
-      params['child'] = {'type': 'text', 'text': child.data!};
-    } else if (child is Icon && child.icon is IconData) {
-      final icon = child.icon as IconData;
-      final Map<String, dynamic> iconParams = {
-        'type': 'icon',
-        'icon': {
-          'codePoint': icon.codePoint,
-          'fontFamily': icon.fontFamily,
-          'fontPackage': icon.fontPackage,
-        },
-        'size': child.size,
+    // Pass image data if available
+    if (_capturedImage != null) {
+      params['child'] = {
+        'type': 'image',
+        'imageBytes': _capturedImage,
       };
-      if (child.color != null) {
-        iconParams['color'] = _serializeColor(child.color!);
-      }
-      params['child'] = iconParams;
     } else {
-      params['child'] = {'type': 'text', 'text': ''};
-    }
-
-    if (widget.backgroundColor != null) {
-      params['backgroundColor'] = _serializeColor(widget.backgroundColor!);
+      // Fallback when image isn't captured yet
+      params['child'] = {'type': 'empty'};
     }
 
     // Use default size if not provided
@@ -182,6 +157,16 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     return null;
   }
 
+  void _onImageCaptured(Uint8List imageBytes) {
+    setState(() {
+      _capturedImage = imageBytes;
+    });
+    // If the channel is already initialized, update the view with the new image
+    if (_instanceMethodChannel != null) {
+      _updateNativeView();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // This should match exactly with the registered id in NativeMenuPlugin.swift
@@ -190,15 +175,26 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       if (widget.size != null) {
-        return SizedBox(
-          width: widget.size!.width,
-          height: widget.size!.height,
-          child: UiKitView(
-            viewType: viewType,
-            creationParams: creationParams,
-            creationParamsCodec: const StandardMessageCodec(),
-            onPlatformViewCreated: _onPlatformViewCreated,
-          ),
+        return Stack(
+          children: [
+            // Capture the widget as an image
+            WidgetAsImage(
+              onImageCaptured: _onImageCaptured,
+              child: widget.child,
+            ),
+
+            // The native view with fixed size
+            SizedBox(
+              width: widget.size!.width,
+              height: widget.size!.height,
+              child: UiKitView(
+                viewType: viewType,
+                creationParams: creationParams,
+                creationParamsCodec: const StandardMessageCodec(),
+                onPlatformViewCreated: _onPlatformViewCreated,
+              ),
+            ),
+          ],
         );
       } else {
         // Use automatic sizing based on child's layout
@@ -207,6 +203,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
           creationParams: creationParams,
           onPlatformViewCreated: _onPlatformViewCreated,
           onSizeChanged: _onSizeChanged,
+          onImageCaptured: _onImageCaptured,
           child: widget.child,
         );
       }
@@ -230,6 +227,7 @@ class _AutoSizeNativeMenu extends StatefulWidget {
   final Map<String, dynamic> creationParams;
   final Function(int) onPlatformViewCreated;
   final Function(Size) onSizeChanged;
+  final Function(Uint8List) onImageCaptured;
 
   const _AutoSizeNativeMenu({
     required this.child,
@@ -237,6 +235,7 @@ class _AutoSizeNativeMenu extends StatefulWidget {
     required this.creationParams,
     required this.onPlatformViewCreated,
     required this.onSizeChanged,
+    required this.onImageCaptured,
   });
 
   @override
@@ -291,16 +290,29 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
     super.dispose();
   }
 
+  // Called when the WidgetAsImage widget captures the image
+  void _handleImageCaptured(Uint8List imageBytes) {
+    // We don't need to store the image locally, just forward it to the parent
+    widget.onImageCaptured(imageBytes);
+
+    // Force a size update if it hasn't happened yet
+    if (_childSize == null) {
+      _updateChildSize();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // This widget is used to measure the child's size.
-        SizedBox(
+        // Use WidgetAsImage to capture the child widget as an image
+        WidgetAsImage(
           key: _childKey,
+          onImageCaptured: _handleImageCaptured,
           child: widget.child,
         ),
-        // The native view is only built after the child's size is known.
+
+        // The native view is only built after the child's size is known
         if (_childSize != null)
           SizedBox(
             width: _childSize!.width,
