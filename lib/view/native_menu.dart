@@ -7,14 +7,12 @@ import 'package:flutter/services.dart';
 class NativeMenuWidget extends StatefulWidget {
   final Widget child;
   final List<AdaptiveMenuItem> items;
-  final Size? size;
   final VoidCallback? onPressed;
 
   const NativeMenuWidget({
     super.key,
     required this.child,
     required this.items,
-    this.size,
     this.onPressed,
   });
 
@@ -41,7 +39,6 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   void didUpdateWidget(NativeMenuWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.child != oldWidget.child ||
-        widget.size != oldWidget.size ||
         !listEquals(widget.items, oldWidget.items) ||
         widget.onPressed != oldWidget.onPressed) {
       _updateNativeView();
@@ -65,13 +62,6 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       // Fallback when image isn't captured yet
       params['child'] = {'type': 'empty'};
     }
-
-    // Use default size if not provided
-    final Size effectiveSize = widget.size ?? const Size(184, 184);
-    params['size'] = {
-      'width': effectiveSize.width,
-      'height': effectiveSize.height,
-    };
 
     if (widget.items.isNotEmpty) {
       params['items'] = _serializeMenuItems(widget.items);
@@ -174,39 +164,15 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     final Map<String, dynamic> creationParams = _buildParams();
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      if (widget.size != null) {
-        return Stack(
-          children: [
-            // Capture the widget as an image
-            WidgetAsImage(
-              onImageCaptured: _onImageCaptured,
-              child: widget.child,
-            ),
-
-            // The native view with fixed size
-            SizedBox(
-              width: widget.size!.width,
-              height: widget.size!.height,
-              child: UiKitView(
-                viewType: viewType,
-                creationParams: creationParams,
-                creationParamsCodec: const StandardMessageCodec(),
-                onPlatformViewCreated: _onPlatformViewCreated,
-              ),
-            ),
-          ],
-        );
-      } else {
-        // Use automatic sizing based on child's layout
-        return _AutoSizeNativeMenu(
-          viewType: viewType,
-          creationParams: creationParams,
-          onPlatformViewCreated: _onPlatformViewCreated,
-          onSizeChanged: _onSizeChanged,
-          onImageCaptured: _onImageCaptured,
-          child: widget.child,
-        );
-      }
+      // Use automatic sizing based on child's layout
+      return _AutoSizeNativeMenu(
+        viewType: viewType,
+        creationParams: creationParams,
+        onPlatformViewCreated: _onPlatformViewCreated,
+        onSizeChanged: _onSizeChanged,
+        onImageCaptured: _onImageCaptured,
+        child: widget.child,
+      );
     } else {
       return Text('$viewType is not available on this platform.');
     }
@@ -275,12 +241,20 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
       // Get the size in the global coordinate system
       final Size size = renderBox.size;
 
-      // Always update size even if it appears the same - this ensures proper synchronization
-      setState(() {
-        _childSize = size;
-      });
-      // Pass size to Swift
-      widget.onSizeChanged(size);
+      // Check if size actually changed to avoid unnecessary updates
+      final bool sizeChanged =
+          _childSize == null ||
+          _childSize!.width != size.width ||
+          _childSize!.height != size.height;
+
+      if (sizeChanged) {
+        // Update size in state
+        setState(() {
+          _childSize = size;
+        });
+        // Pass size to Swift
+        widget.onSizeChanged(size);
+      }
     }
   }
 
@@ -314,9 +288,7 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
 
         // The native view is only built after the child's size is known
         if (_childSize != null)
-          SizedBox(
-            width: _childSize!.width,
-            height: _childSize!.height,
+          Positioned.fill(
             child: UiKitView(
               viewType: widget.viewType,
               creationParams: widget.creationParams,

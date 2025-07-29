@@ -25,7 +25,6 @@ void main() {
           home: Scaffold(
             body: AdaptiveMenu(
               items: menuItems,
-              size: const Size(24, 24),
               child: const Icon(Icons.menu), // Changed child to Icon
             ),
           ),
@@ -61,7 +60,6 @@ void main() {
             body: AdaptiveMenu(
               type: AdaptiveMenuType.native,
               items: menuItems,
-              size: const Size(24, 24),
               child: const Icon(Icons.menu), // Changed child to Icon
             ),
           ),
@@ -93,7 +91,6 @@ void main() {
           home: Scaffold(
             body: AdaptiveMenu(
               items: items,
-              size: const Size(24, 24),
               child: const Icon(Icons.more_vert),
             ),
           ),

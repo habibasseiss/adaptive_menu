@@ -71,6 +71,9 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             _button.showsMenuAsPrimaryAction = false
             return
         }
+        
+        // Ensure button covers the entire view area for proper touch handling
+        _button.frame = _view.bounds
 
         // Reset button content before setting new content
         _button.setTitle(nil, for: .normal)
@@ -84,7 +87,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                 // Handle image data
                 if let flutterData = childMap["imageBytes"] as? FlutterStandardTypedData {
                     if let image = UIImage(data: flutterData.data) {
-                        // Set the image on the button
+                        // Set the image on the button with proper rendering mode
                         _button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
                         
                         // Configure button to properly display the image
@@ -92,6 +95,9 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                         _button.contentHorizontalAlignment = .fill
                         _button.contentVerticalAlignment = .fill
                         _button.imageEdgeInsets = UIEdgeInsets.zero
+                        
+                        // Force layout update to ensure image is displayed correctly
+                        _button.setNeedsDisplay()
                     }
                 }
             } else if type == "empty" {

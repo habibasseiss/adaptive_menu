@@ -9,14 +9,12 @@ class AdaptiveMenu extends StatelessWidget {
   const AdaptiveMenu({
     required this.items,
     required this.child,
-    this.size,
     this.type,
     this.onPressed,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
-  final Size? size;
   final VoidCallback? onPressed;
   final AdaptiveMenuType? type;
   final Widget child;
@@ -25,14 +23,12 @@ class AdaptiveMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final nativeMenu = NativeMenuWidget(
       items: items,
-      size: size,
       onPressed: onPressed,
       child: child,
     );
 
     final materialMenu = MaterialMenu(
       items: items,
-      size: size,
       child: child,
     );
 
