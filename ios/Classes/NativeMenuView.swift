@@ -2,136 +2,151 @@ import Flutter
 import UIKit
 
 class NativeMenuView: NSObject, FlutterPlatformView {
+    // MARK: - Constants
+    private static let channelPrefix = "app.digizorg/native_menu_channel_"
+    private static let defaultIconSize: CGFloat = 20.0
+    private static let materialIconsFont = "MaterialIcons-Regular"
+    
+    // MARK: - Properties
     private var _view: UIView
     private var _methodChannel: FlutterMethodChannel
     private let _button: UIButton = UIButton(type: .system)
     private let _viewId: Int64
 
+    // MARK: - Initialization
     init(
         frame: CGRect,
         viewIdentifier viewId: Int64,
         arguments args: Any?,
         binaryMessenger messenger: FlutterBinaryMessenger?
     ) {
-        self._viewId = viewId
-        _view = UIView(frame: frame)
-        // Construct a unique channel name using the viewId
-        let channelName = "app.digizorg/native_menu_channel_\(viewId)"
-        _methodChannel = FlutterMethodChannel(name: channelName,
-                                              binaryMessenger: messenger!)
-        super.init()
-
-        if messenger == nil {
+        guard let messenger = messenger else {
             fatalError("Binary messenger is nil in NativeMenuView init")
         }
-
-        // Set the method call handler before creating the view
-        _methodChannel.setMethodCallHandler(handle)
         
-        createNativeView(view: _view, arguments: args)
+        self._viewId = viewId
+        self._view = UIView(frame: frame)
+        self._methodChannel = FlutterMethodChannel(
+            name: Self.channelPrefix + "\(viewId)",
+            binaryMessenger: messenger
+        )
+        
+        super.init()
+        
+        _setupMethodChannel()
+        _createNativeView(arguments: args)
     }
 
+    // MARK: - FlutterPlatformView Protocol
     func view() -> UIView {
         return _view
     }
-
-    // Handles method calls from Dart
-    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        switch call.method {
-        case "update":
-            // When an update call is received, apply the new properties
-            updateButtonProperties(with: call.arguments)
-            // Force a layout update after updating properties
-            DispatchQueue.main.async {
-                self._button.isEnabled = true
-                self._button.isUserInteractionEnabled = true
-                self._view.setNeedsLayout()
-                self._view.layoutIfNeeded()
-            }
-            result(nil)
-        case "updateImage":
-            // Use the dedicated updateImage method
-            updateImage(with: call.arguments)
-            result(nil)
-        case "updateSize":
-            updateSize(with: call.arguments)
-            result(nil)
-        default:
-            result(FlutterMethodNotImplemented)
-        }
+    
+    // MARK: - Private Setup Methods
+    private func _setupMethodChannel() {
+        _methodChannel.setMethodCallHandler(handle)
     }
-
-    func createNativeView(view platformRootView: UIView, arguments args: Any?){
-        platformRootView.backgroundColor = UIColor.clear
-        
-        // Configure button for proper alignment
+    
+    private func _createNativeView(arguments args: Any?) {
+        _setupView()
+        _setupButton()
+        updateButtonProperties(with: args)
+        _view.addSubview(_button)
+    }
+    
+    private func _setupView() {
+        _view.backgroundColor = UIColor.clear
+    }
+    
+    private func _setupButton() {
         _button.contentMode = .scaleToFill
         _button.contentHorizontalAlignment = .fill
         _button.contentVerticalAlignment = .fill
         _button.imageView?.contentMode = .scaleAspectFit
-
-        // Apply initial properties
-        updateButtonProperties(with: args)
-
         _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-        platformRootView.addSubview(_button)
     }
 
-    // A single function to configure the button's properties from a map of arguments
+    // MARK: - Method Call Handling
+    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "update":
+            _handleUpdate(arguments: call.arguments, result: result)
+        case "updateImage":
+            _handleUpdateImage(arguments: call.arguments, result: result)
+        case "updateSize":
+            _handleUpdateSize(arguments: call.arguments, result: result)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+    
+    private func _handleUpdate(arguments: Any?, result: @escaping FlutterResult) {
+        updateButtonProperties(with: arguments)
+        _scheduleLayoutUpdate()
+        result(nil)
+    }
+    
+    private func _handleUpdateImage(arguments: Any?, result: @escaping FlutterResult) {
+        updateImage(with: arguments)
+        result(nil)
+    }
+    
+    private func _handleUpdateSize(arguments: Any?, result: @escaping FlutterResult) {
+        updateSize(with: arguments)
+        result(nil)
+    }
+    
+    private func _scheduleLayoutUpdate() {
+        DispatchQueue.main.async {
+            self._enableButton()
+            self._forceLayout()
+        }
+    }
+    
+    private func _enableButton() {
+        _button.isEnabled = true
+        _button.isUserInteractionEnabled = true
+    }
+    
+    private func _forceLayout() {
+        _view.setNeedsLayout()
+        _view.layoutIfNeeded()
+    }
+
+    @objc private func buttonTapped() {
+        _methodChannel.invokeMethod("buttonTapped", arguments: nil)
+    }
+
+    // MARK: - Button Configuration
     private func updateButtonProperties(with args: Any?) {
         guard let arguments = args as? [String: Any] else {
-            // Handle case where there are no arguments
-            _button.setTitle("Default Native Title", for: .normal)
-            _button.backgroundColor = UIColor.clear
-            _button.frame = _view.bounds
-            _button.menu = nil
-            _button.showsMenuAsPrimaryAction = false
-            _button.isEnabled = true // Ensure button is enabled
+            _applyDefaultButtonProperties()
             return
         }
         
-        // Ensure button covers the entire view area for proper touch handling
+        _resetButtonContent()
+        _configureButtonFrame(from: arguments)
+        _configureButtonContent(from: arguments)
+        _configureButtonMenu(from: arguments)
+        _configureMenuBehavior(from: arguments)
+        _enableButton()
+    }
+    
+    private func _applyDefaultButtonProperties() {
+        _button.setTitle("Default Native Title", for: .normal)
+        _button.backgroundColor = UIColor.clear
         _button.frame = _view.bounds
-        
-        // Always ensure the button is enabled
+        _button.menu = nil
+        _button.showsMenuAsPrimaryAction = false
         _button.isEnabled = true
-
-        // Reset button content before setting new content
+    }
+    
+    private func _resetButtonContent() {
         _button.setTitle(nil, for: .normal)
         _button.setImage(nil, for: .normal)
-
-        // Set content from the 'child' parameter
-        if let childMap = arguments["child"] as? [String: Any],
-           let type = childMap["type"] as? String {
-            
-            if type == "image" {
-                // Handle image data
-                if let flutterData = childMap["imageBytes"] as? FlutterStandardTypedData {
-                    if let image = UIImage(data: flutterData.data) {
-                        // Set the image on the button with proper rendering mode
-                        _button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
-                        
-                        // Configure button to properly display the image
-                        _button.imageView?.contentMode = .scaleAspectFit
-                        _button.contentHorizontalAlignment = .fill
-                        _button.contentVerticalAlignment = .fill
-                        _button.imageEdgeInsets = UIEdgeInsets.zero
-                        
-                        // Force layout update to ensure image is displayed correctly
-                        _button.setNeedsDisplay()
-                    }
-                }
-            } else if type == "empty" {
-                // Clear button content while waiting for image
-                _button.setImage(nil, for: .normal)
-                _button.setTitle(nil, for: .normal)
-            }
-        } else {
-            // Fallback if 'child' is not provided correctly
-            _button.setTitle("Invalid Content", for: .normal)
-        }
-        
-        // Set the frame from the 'size' argument
+    }
+    
+    private func _configureButtonFrame(from arguments: [String: Any]) {
         if let sizeMap = arguments["size"] as? [String: Double],
            let width = sizeMap["width"],
            let height = sizeMap["height"] {
@@ -139,21 +154,58 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         } else {
             _button.frame = _view.bounds
         }
+    }
+    
+    private func _configureButtonContent(from arguments: [String: Any]) {
+        guard let childMap = arguments["child"] as? [String: Any],
+              let type = childMap["type"] as? String else {
+            _button.setTitle("Invalid Content", for: .normal)
+            return
+        }
         
-        // Handle actions for pull-down menu
+        switch type {
+        case "image":
+            _handleImageContent(from: childMap)
+        case "empty":
+            _handleEmptyContent()
+        default:
+            _button.setTitle("Unknown Content Type", for: .normal)
+        }
+    }
+    
+    private func _handleImageContent(from childMap: [String: Any]) {
+        guard let flutterData = childMap["imageBytes"] as? FlutterStandardTypedData,
+              let image = UIImage(data: flutterData.data) else { return }
+        
+        _setButtonImage(image)
+    }
+    
+    private func _handleEmptyContent() {
+        _button.setImage(nil, for: .normal)
+        _button.setTitle(nil, for: .normal)
+    }
+    
+    private func _setButtonImage(_ image: UIImage) {
+        _button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
+        _button.imageView?.contentMode = .scaleAspectFit
+        _button.contentHorizontalAlignment = .fill
+        _button.contentVerticalAlignment = .fill
+        _button.imageEdgeInsets = UIEdgeInsets.zero
+        _button.setNeedsDisplay()
+    }
+    
+    private func _configureButtonMenu(from arguments: [String: Any]) {
         if let itemsArray = arguments["items"] as? [[String: Any]], !itemsArray.isEmpty {
             let menuElements = createMenuItems(from: itemsArray)
             _button.menu = UIMenu(title: "", children: menuElements)
         } else {
             _button.menu = nil
         }
-
+    }
+    
+    private func _configureMenuBehavior(from arguments: [String: Any]) {
         let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
         _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
-    }
-
-    @objc private func buttonTapped() {
-        _methodChannel.invokeMethod("buttonTapped", arguments: nil)
     }
 
     // Updates the image in the button
