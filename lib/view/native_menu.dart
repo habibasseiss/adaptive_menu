@@ -21,140 +21,193 @@ class NativeMenuWidget extends StatefulWidget {
 }
 
 class _NativeMenuWidgetState extends State<NativeMenuWidget> {
-  MethodChannel? _instanceMethodChannel; // Instance-specific channel
+  static const String _viewType = 'app.digizorg/native_menu';
+  static const String _channelPrefix = 'app.digizorg/native_menu_channel_';
+
+  MethodChannel? _instanceMethodChannel;
   Uint8List? _capturedImage;
 
   @override
   void initState() {
     super.initState();
-
-    // Ensure we initialize the menu properly after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_instanceMethodChannel != null && _capturedImage != null) {
-        _updateNativeView();
-      }
-    });
-  }
-
-  void _onPlatformViewCreated(int id) {
-    final String channelName = 'app.digizorg/native_menu_channel_$id';
-    _instanceMethodChannel = MethodChannel(channelName);
-    _instanceMethodChannel!.setMethodCallHandler(_instanceHandleMethodCall);
-
-    // Initialize the native view as soon as it's created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_capturedImage != null) {
-        _updateNativeView();
-      }
-    });
+    _schedulePostFrameCallback(_initializeMenuIfReady);
   }
 
   @override
   void didUpdateWidget(NativeMenuWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.child != oldWidget.child ||
-        !listEquals(widget.items, oldWidget.items) ||
-        widget.onPressed != oldWidget.onPressed) {
+    if (_hasWidgetChanged(oldWidget)) {
       _updateNativeView();
     }
   }
 
+  @override
+  void dispose() {
+    _cleanupMethodChannel();
+    super.dispose();
+  }
+
+  // Platform view creation and initialization
+  void _onPlatformViewCreated(int id) {
+    _setupMethodChannel(id);
+    _schedulePostFrameCallback(_initializeViewIfImageReady);
+  }
+
+  void _setupMethodChannel(int id) {
+    final String channelName = '$_channelPrefix$id';
+    _instanceMethodChannel = MethodChannel(channelName);
+    _instanceMethodChannel!.setMethodCallHandler(_handleMethodCall);
+  }
+
+  void _cleanupMethodChannel() {
+    _instanceMethodChannel?.setMethodCallHandler(null);
+    _instanceMethodChannel = null;
+  }
+
+  // Widget change detection
+  bool _hasWidgetChanged(NativeMenuWidget oldWidget) {
+    return widget.child != oldWidget.child ||
+        !listEquals(widget.items, oldWidget.items) ||
+        widget.onPressed != oldWidget.onPressed;
+  }
+
+  // Initialization helpers
+  void _initializeMenuIfReady() {
+    if (_instanceMethodChannel != null && _capturedImage != null) {
+      _updateNativeView();
+    }
+  }
+
+  void _initializeViewIfImageReady() {
+    if (_capturedImage != null) {
+      _updateNativeView();
+    }
+  }
+
+  void _schedulePostFrameCallback(VoidCallback callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => callback());
+  }
+
+  // Native view updates
   Future<void> _updateNativeView() async {
-    final _AutoSizeNativeMenuState? state = context
-        .findAncestorStateOfType<_AutoSizeNativeMenuState>();
+    if (_instanceMethodChannel == null) return;
 
-    // First update the parameters
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
+    _scheduleSizeUpdate();
+  }
 
-    // Force a size update to ensure proper alignment
+  void _scheduleSizeUpdate() {
+    final state = context.findAncestorStateOfType<_AutoSizeNativeMenuState>();
     if (state != null) {
-      // Schedule this for the next frame to ensure all layout is complete
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        state._updateChildSize();
+      _schedulePostFrameCallback(state._updateChildSize);
+    }
+  }
+
+  Future<void> _updateNativeImage() async {
+    if (_capturedImage != null && _instanceMethodChannel != null) {
+      await _instanceMethodChannel!.invokeMethod('updateImage', {
+        'image': _capturedImage,
       });
     }
   }
 
+  // Parameter building
   Map<String, dynamic> _buildParams() {
-    final Map<String, dynamic> params = <String, dynamic>{};
+    return {
+      'child': _buildChildParams(),
+      if (widget.items.isNotEmpty) 'items': _serializeMenuItems(widget.items),
+      'showsMenuAsPrimaryAction': widget.onPressed == null,
+    };
+  }
 
-    // Pass image data if available
+  Map<String, dynamic> _buildChildParams() {
     if (_capturedImage != null) {
-      params['child'] = {
+      return {
         'type': 'image',
         'imageBytes': _capturedImage,
       };
-    } else {
-      // Fallback when image isn't captured yet
-      params['child'] = {'type': 'empty'};
     }
-
-    if (widget.items.isNotEmpty) {
-      params['items'] = _serializeMenuItems(widget.items);
-    }
-
-    params['showsMenuAsPrimaryAction'] = widget.onPressed == null;
-
-    return params;
+    return {'type': 'empty'};
   }
 
-  // Called when the child widget's size changes
+  // Size change handling
   void _onSizeChanged(Size size) {
     if (_instanceMethodChannel != null) {
-      final Map<String, dynamic> params = <String, dynamic>{
+      _instanceMethodChannel!.invokeMethod('updateSize', {
         'size': {'width': size.width, 'height': size.height},
-      };
-      _instanceMethodChannel!.invokeMethod('updateSize', params);
+      });
     }
   }
 
+  // Menu item serialization
   List<Map<String, dynamic>> _serializeMenuItems(List<AdaptiveMenuItem> items) {
-    return items.map((item) {
-      if (item is AdaptiveMenuAction) {
-        return {
-          'type': 'action',
-          'id': item.id,
-          'title': item.title,
-          'style': item.style.toString().split('.').last,
-          if (item.description != null) 'description': item.description,
-          if (item.checked != null) 'checked': item.checked,
-          if (item.icon != null)
-            'icon': {
-              'codePoint': item.icon!.codePoint,
-              'fontFamily': item.icon!.fontFamily,
-              'fontPackage': item.icon!.fontPackage,
-            },
-        };
-      } else if (item is AdaptiveMenuGroup) {
-        return {
-          'type': 'group',
-          'title': item.title,
-          'style': item.style.toString().split('.').last,
-          'items': _serializeMenuItems(item.actions),
-          if (item.icon != null)
-            'icon': {
-              'codePoint': item.icon!.codePoint,
-              'fontFamily': item.icon!.fontFamily,
-              'fontPackage': item.icon!.fontPackage,
-            },
-        };
-      }
-      return <String, dynamic>{};
-    }).toList();
+    return items.map(_serializeMenuItem).toList();
   }
 
-  Future<void> _instanceHandleMethodCall(MethodCall call) async {
+  Map<String, dynamic> _serializeMenuItem(AdaptiveMenuItem item) {
+    if (item is AdaptiveMenuAction) {
+      return _serializeMenuAction(item);
+    } else if (item is AdaptiveMenuGroup) {
+      return _serializeMenuGroup(item);
+    }
+    return <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _serializeMenuAction(AdaptiveMenuAction action) {
+    return {
+      'type': 'action',
+      'id': action.id,
+      'title': action.title,
+      'style': _getStyleString(action.style),
+      if (action.description != null) 'description': action.description,
+      if (action.checked != null) 'checked': action.checked,
+      if (action.icon != null) 'icon': _serializeIcon(action.icon!),
+    };
+  }
+
+  Map<String, dynamic> _serializeMenuGroup(AdaptiveMenuGroup group) {
+    return {
+      'type': 'group',
+      'title': group.title,
+      'style': _getStyleString(group.style),
+      'items': _serializeMenuItems(group.actions),
+      if (group.icon != null) 'icon': _serializeIcon(group.icon!),
+    };
+  }
+
+  Map<String, dynamic> _serializeIcon(IconData icon) {
+    return {
+      'codePoint': icon.codePoint,
+      'fontFamily': icon.fontFamily,
+      'fontPackage': icon.fontPackage,
+    };
+  }
+
+  String _getStyleString(dynamic style) {
+    return style.toString().split('.').last;
+  }
+
+  // Method call handling
+  Future<void> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'buttonTapped':
-        widget.onPressed?.call();
+        _handleButtonTapped();
         break;
       case 'actionSelected':
-        final String? actionId = call.arguments['id'] as String?;
-        if (actionId != null) {
-          final action = _findActionById(actionId, widget.items);
-          action?.onPressed?.call();
-        }
+        _handleActionSelected(call.arguments);
         break;
+    }
+  }
+
+  void _handleButtonTapped() {
+    widget.onPressed?.call();
+  }
+
+  void _handleActionSelected(dynamic arguments) {
+    final String? actionId = arguments['id'] as String?;
+    if (actionId != null) {
+      final action = _findActionById(actionId, widget.items);
+      action?.onPressed?.call();
     }
   }
 
@@ -165,63 +218,37 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       }
       if (item is AdaptiveMenuGroup) {
         final action = _findActionById(id, item.actions);
-        if (action != null) {
-          return action;
-        }
+        if (action != null) return action;
       }
     }
     return null;
   }
 
+  // Image capture handling
   void _onImageCaptured(Uint8List imageBytes) {
     setState(() {
       _capturedImage = imageBytes;
     });
-    
-    // If the channel is already initialized, update the view with the new image
-    if (_instanceMethodChannel != null) {
-      // First update the image specifically
-      _updateNativeImage();
-      // Then update the full native view
-      _updateNativeView();
-    }
-  }
 
-  Future<void> _updateNativeImage() async {
-    if (_capturedImage != null && _instanceMethodChannel != null) {
-      // Call the dedicated updateImage method with just the image data
-      await _instanceMethodChannel!.invokeMethod('updateImage', {
-        'image': _capturedImage,
-      });
+    if (_instanceMethodChannel != null) {
+      _updateNativeImage();
+      _updateNativeView();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This should match exactly with the registered id in NativeMenuPlugin.swift
-    const String viewType = 'app.digizorg/native_menu';
-    final Map<String, dynamic> creationParams = _buildParams();
-
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      // Use automatic sizing based on child's layout
       return _AutoSizeNativeMenu(
-        viewType: viewType,
-        creationParams: creationParams,
+        viewType: _viewType,
+        creationParams: _buildParams(),
         onPlatformViewCreated: _onPlatformViewCreated,
         onSizeChanged: _onSizeChanged,
         onImageCaptured: _onImageCaptured,
         child: widget.child,
       );
-    } else {
-      return Text('$viewType is not available on this platform.');
     }
-  }
-
-  @override
-  void dispose() {
-    _instanceMethodChannel?.setMethodCallHandler(null);
-    _instanceMethodChannel = null;
-    super.dispose();
+    return Text('$_viewType is not available on this platform.');
   }
 }
 
@@ -256,45 +283,18 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Schedule a post-frame callback to measure the child's size
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateChildSize());
+    _schedulePostFrameCallback(_updateChildSize);
   }
 
   @override
   void didChangeMetrics() {
-    // Re-measure when the metrics change (e.g., orientation changes)
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateChildSize());
+    _schedulePostFrameCallback(_updateChildSize);
   }
 
   @override
   void didUpdateWidget(_AutoSizeNativeMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Re-measure when the widget updates
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateChildSize());
-  }
-
-  void _updateChildSize() {
-    final RenderBox? renderBox =
-        _childKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox != null && renderBox.hasSize) {
-      // Get the size in the global coordinate system
-      final Size size = renderBox.size;
-
-      // Check if size actually changed to avoid unnecessary updates
-      final bool sizeChanged =
-          _childSize == null ||
-          _childSize!.width != size.width ||
-          _childSize!.height != size.height;
-
-      if (sizeChanged) {
-        // Update size in state
-        setState(() {
-          _childSize = size;
-        });
-        // Pass size to Swift
-        widget.onSizeChanged(size);
-      }
-    }
+    _schedulePostFrameCallback(_updateChildSize);
   }
 
   @override
@@ -303,22 +303,53 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
     super.dispose();
   }
 
-  // Called when the WidgetAsImage widget captures the image
-  void _handleImageCaptured(Uint8List imageBytes) {
-    // We don't need to store the image locally, just forward it to the parent
-    widget.onImageCaptured(imageBytes);
+  void _schedulePostFrameCallback(VoidCallback callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => callback());
+  }
 
-    // Force a size update if it hasn't happened yet
+  void _updateChildSize() {
+    final renderBox = _getRenderBox();
+    if (renderBox?.hasSize == true) {
+      final size = renderBox!.size;
+      if (_hasSizeChanged(size)) {
+        _updateSize(size);
+      }
+    }
+  }
+
+  RenderBox? _getRenderBox() {
+    return _childKey.currentContext?.findRenderObject() as RenderBox?;
+  }
+
+  bool _hasSizeChanged(Size newSize) {
+    return _childSize == null ||
+        _childSize!.width != newSize.width ||
+        _childSize!.height != newSize.height;
+  }
+
+  void _updateSize(Size newSize) {
+    setState(() {
+      _childSize = newSize;
+    });
+    widget.onSizeChanged(newSize);
+  }
+
+  void _handleImageCaptured(Uint8List imageBytes) {
+    widget.onImageCaptured(imageBytes);
+    _ensureSizeUpdate();
+    _scheduleRebuildIfMounted();
+  }
+
+  void _ensureSizeUpdate() {
     if (_childSize == null) {
       _updateChildSize();
     } else {
-      // If size is already known, ensure we still update the parent
-      // This helps with menu initialization on first render
       widget.onSizeChanged(_childSize!);
     }
+  }
 
-    // Ensure layout is complete before showing the menu
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void _scheduleRebuildIfMounted() {
+    _schedulePostFrameCallback(() {
       if (mounted) {
         setState(() {}); // Force rebuild to ensure proper rendering
       }
@@ -331,31 +362,35 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
       clipBehavior: Clip.none,
       fit: StackFit.passthrough,
       children: [
-        // Use WidgetAsImage to capture the child widget as an image
-        Opacity(
-          opacity: 0.3,
-          child: WidgetAsImage(
-            key: _childKey,
-            onImageCaptured: _handleImageCaptured,
-            child: widget.child,
-          ),
-        ),
-
-        // The native view is only built after the child's size is known
-        if (_childSize != null)
-          Positioned(
-            left: 0,
-            top: 0,
-            width: _childSize!.width,
-            height: _childSize!.height,
-            child: UiKitView(
-              viewType: widget.viewType,
-              creationParams: widget.creationParams,
-              creationParamsCodec: const StandardMessageCodec(),
-              onPlatformViewCreated: widget.onPlatformViewCreated,
-            ),
-          ),
+        _buildChildWithImage(),
+        if (_childSize != null) _buildNativeView(),
       ],
+    );
+  }
+
+  Widget _buildChildWithImage() {
+    return Opacity(
+      opacity: 0.3,
+      child: WidgetAsImage(
+        key: _childKey,
+        onImageCaptured: _handleImageCaptured,
+        child: widget.child,
+      ),
+    );
+  }
+
+  Widget _buildNativeView() {
+    return Positioned(
+      left: 0,
+      top: 0,
+      width: _childSize!.width,
+      height: _childSize!.height,
+      child: UiKitView(
+        viewType: widget.viewType,
+        creationParams: widget.creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: widget.onPlatformViewCreated,
+      ),
     );
   }
 }
