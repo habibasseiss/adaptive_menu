@@ -27,12 +27,26 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   @override
   void initState() {
     super.initState();
+
+    // Ensure we initialize the menu properly after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_instanceMethodChannel != null && _capturedImage != null) {
+        _updateNativeView();
+      }
+    });
   }
 
   void _onPlatformViewCreated(int id) {
     final String channelName = 'app.digizorg/native_menu_channel_$id';
     _instanceMethodChannel = MethodChannel(channelName);
     _instanceMethodChannel!.setMethodCallHandler(_instanceHandleMethodCall);
+
+    // Initialize the native view as soon as it's created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_capturedImage != null) {
+        _updateNativeView();
+      }
+    });
   }
 
   @override
@@ -46,12 +60,13 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   }
 
   Future<void> _updateNativeView() async {
+    final _AutoSizeNativeMenuState? state = context
+        .findAncestorStateOfType<_AutoSizeNativeMenuState>();
+
     // First update the parameters
     await _instanceMethodChannel!.invokeMethod('update', _buildParams());
 
     // Force a size update to ensure proper alignment
-    final _AutoSizeNativeMenuState? state = context
-        .findAncestorStateOfType<_AutoSizeNativeMenuState>();
     if (state != null) {
       // Schedule this for the next frame to ensure all layout is complete
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -162,9 +177,22 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     setState(() {
       _capturedImage = imageBytes;
     });
+    
     // If the channel is already initialized, update the view with the new image
     if (_instanceMethodChannel != null) {
+      // First update the image specifically
+      _updateNativeImage();
+      // Then update the full native view
       _updateNativeView();
+    }
+  }
+
+  Future<void> _updateNativeImage() async {
+    if (_capturedImage != null && _instanceMethodChannel != null) {
+      // Call the dedicated updateImage method with just the image data
+      await _instanceMethodChannel!.invokeMethod('updateImage', {
+        'image': _capturedImage,
+      });
     }
   }
 
@@ -283,7 +311,18 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
     // Force a size update if it hasn't happened yet
     if (_childSize == null) {
       _updateChildSize();
+    } else {
+      // If size is already known, ensure we still update the parent
+      // This helps with menu initialization on first render
+      widget.onSizeChanged(_childSize!);
     }
+
+    // Ensure layout is complete before showing the menu
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {}); // Force rebuild to ensure proper rendering
+      }
+    });
   }
 
   @override

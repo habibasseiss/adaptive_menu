@@ -41,6 +41,17 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         case "update":
             // When an update call is received, apply the new properties
             updateButtonProperties(with: call.arguments)
+            // Force a layout update after updating properties
+            DispatchQueue.main.async {
+                self._button.isEnabled = true
+                self._button.isUserInteractionEnabled = true
+                self._view.setNeedsLayout()
+                self._view.layoutIfNeeded()
+            }
+            result(nil)
+        case "updateImage":
+            // Use the dedicated updateImage method
+            updateImage(with: call.arguments)
             result(nil)
         case "updateSize":
             updateSize(with: call.arguments)
@@ -75,11 +86,15 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             _button.frame = _view.bounds
             _button.menu = nil
             _button.showsMenuAsPrimaryAction = false
+            _button.isEnabled = true // Ensure button is enabled
             return
         }
         
         // Ensure button covers the entire view area for proper touch handling
         _button.frame = _view.bounds
+        
+        // Always ensure the button is enabled
+        _button.isEnabled = true
 
         // Reset button content before setting new content
         _button.setTitle(nil, for: .normal)
@@ -139,6 +154,34 @@ class NativeMenuView: NSObject, FlutterPlatformView {
 
     @objc private func buttonTapped() {
         _methodChannel.invokeMethod("buttonTapped", arguments: nil)
+    }
+
+    // Updates the image in the button
+    private func updateImage(with args: Any?) {
+        guard let arguments = args as? [String: Any],
+              let imageData = arguments["image"] as? FlutterStandardTypedData else {
+            return
+        }
+        
+        // Convert the image data to a UIImage
+        if let image = UIImage(data: imageData.data) {
+            // Set the image on the button
+            _button.setImage(image, for: .normal)
+            _button.imageView?.contentMode = .scaleAspectFit
+            
+            // Ensure button is enabled and interactive
+            _button.isEnabled = true
+            _button.isUserInteractionEnabled = true
+            
+            // Force redraw of the button
+            _button.setNeedsDisplay()
+            
+            // Force layout update to ensure proper rendering
+            DispatchQueue.main.async {
+                self._view.setNeedsLayout()
+                self._view.layoutIfNeeded()
+            }
+        }
     }
 
     // Updates the size of the button and view when the Flutter widget size changes
