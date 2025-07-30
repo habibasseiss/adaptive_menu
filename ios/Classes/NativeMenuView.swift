@@ -62,6 +62,9 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         _button.contentVerticalAlignment = .fill
         _button.imageView?.contentMode = .scaleAspectFit
         _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+
+        // Remove the default system button tint to prevent blue flickering
+        _button.tintColor = UIColor.clear
     }
 
     // MARK: - Method Call Handling
@@ -184,7 +187,10 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     }
     
     private func _setButtonImage(_ image: UIImage) {
-        _button.setImage(image.withRenderingMode(.alwaysOriginal), for: .normal)
+        // If the image doesn't have the correct scale, create one with 3x scale
+        // This ensures the image displays at the correct logical size
+        let scaledImage = image.scale == 3.0 ? image : UIImage(cgImage: image.cgImage!, scale: 3.0, orientation: image.imageOrientation)
+        _button.setImage(scaledImage.withRenderingMode(.alwaysOriginal), for: .normal)
         _button.imageView?.contentMode = .scaleAspectFit
         _button.contentHorizontalAlignment = .fill
         _button.contentVerticalAlignment = .fill
@@ -215,8 +221,10 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         
         // Convert the image data to a UIImage
         if let image = UIImage(data: imageData.data) {
-            // Set the image on the button
-            _button.setImage(image, for: .normal)
+            // The image comes at 3x resolution from Flutter, so we need to create
+            // a UIImage with the correct scale to display at the right logical size
+            let scaledImage = UIImage(data: imageData.data, scale: 3.0) ?? image
+            _button.setImage(scaledImage, for: .normal)
             _button.imageView?.contentMode = .scaleAspectFit
             
             // Ensure button is enabled and interactive

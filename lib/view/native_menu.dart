@@ -245,14 +245,14 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     );
 
     textPainter.layout();
-    
+
     // Create a square canvas based on the scaled size to maintain proportions
     final double canvasSize = scaledSize;
-    
+
     // Center the icon within the square canvas
     final double offsetX = (canvasSize - textPainter.width) / 2;
     final double offsetY = (canvasSize - textPainter.height) / 2;
-    
+
     textPainter.paint(canvas, Offset(offsetX, offsetY));
 
     final picture = recorder.endRecording();
@@ -454,7 +454,7 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
 
   Widget _buildChildWithImage() {
     return Opacity(
-      opacity: 0.3,
+      opacity: 0.25,
       child: WidgetAsImage(
         key: _childKey,
         onImageCaptured: _handleImageCaptured,

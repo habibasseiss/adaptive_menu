@@ -45,13 +45,8 @@ class _WidgetAsImageState extends State<WidgetAsImage> {
   @override
   void initState() {
     super.initState();
-    // We start the capture process after the first frame is rendered.
-    // A small delay is added to give the framework time to finalize the painting
-    // of the widget before we attempt to capture it. This helps to avoid the
-    // '!debugNeedsPaint' error.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 50), _captureWidget);
-    });
+    // Start the capture process after the first frame is fully rendered
+    _scheduleCapture();
   }
 
   @override
@@ -63,12 +58,25 @@ class _WidgetAsImageState extends State<WidgetAsImage> {
         _imageBytes = null;
         _showOriginalChild = true;
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduleCapture();
+    }
+  }
+
+  /// Schedules a widget capture after ensuring the frame is fully rendered.
+  void _scheduleCapture() {
+    if (!mounted) return;
+
+    // Use addPostFrameCallback to ensure the current frame is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // Use endOfFrame to wait for all frame callbacks to complete
+      WidgetsBinding.instance.endOfFrame.then((_) {
         if (mounted) {
-          Future.delayed(const Duration(milliseconds: 50), _captureWidget);
+          Future.delayed(const Duration(milliseconds: 100), _captureWidget);
         }
       });
-    }
+    });
   }
 
   /// Captures the widget identified by the global key as an image.
@@ -94,18 +102,14 @@ class _WidgetAsImageState extends State<WidgetAsImage> {
       // Make sure the boundary has been laid out and painted
       if (boundary.debugNeedsPaint) {
         _capturing = false;
-        // Try again in the next frame
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Future.delayed(const Duration(milliseconds: 50), _captureWidget);
-          }
-        });
+        // Schedule a retry using proper frame scheduling
+        _scheduleCapture();
         return;
       }
 
       // Convert the boundary to an image. We use a pixel ratio for better quality.
       final image = await boundary.toImage(
-        pixelRatio: MediaQuery.of(context).devicePixelRatio,
+        pixelRatio: 3.0,
       );
 
       // Convert the image to byte data in PNG format.
