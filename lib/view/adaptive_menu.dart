@@ -5,31 +5,30 @@ import 'package:flutter/material.dart';
 
 enum AdaptiveMenuType { material, native }
 
+typedef AdaptiveMenuBuilder = Widget Function(void Function() openMenu);
+
 class AdaptiveMenu extends StatelessWidget {
   const AdaptiveMenu({
     required this.items,
-    required this.child,
+    required this.builder,
     this.type,
-    this.onPressed,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
-  final VoidCallback? onPressed;
+  final AdaptiveMenuBuilder builder;
   final AdaptiveMenuType? type;
-  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final nativeMenu = NativeMenuWidget(
       items: items,
-      onPressed: onPressed,
-      child: child,
+      builder: builder,
     );
 
     final materialMenu = MaterialMenu(
       items: items,
-      child: child,
+      builder: builder,
     );
 
     // Native menu can only be used on iOS, but if type is null or

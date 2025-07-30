@@ -2,10 +2,10 @@ import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:flutter/cupertino.dart';
 
 class TrailingWidget extends StatefulWidget {
-  const TrailingWidget({required this.child, this.type, super.key});
+  const TrailingWidget({required this.builder, this.type, super.key});
 
   final AdaptiveMenuType? type;
-  final Widget child;
+  final AdaptiveMenuBuilder builder;
 
   @override
   State<TrailingWidget> createState() => _TrailingWidgetState();
@@ -146,7 +146,7 @@ class _TrailingWidgetState extends State<TrailingWidget> {
           ],
         ),
       ],
-      child: widget.child,
+      builder: widget.builder,
     );
   }
 }

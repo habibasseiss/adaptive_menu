@@ -73,7 +73,7 @@ class _WidgetAsImageState extends State<WidgetAsImage> {
       // Use endOfFrame to wait for all frame callbacks to complete
       WidgetsBinding.instance.endOfFrame.then((_) {
         if (mounted) {
-          Future.delayed(const Duration(milliseconds: 100), _captureWidget);
+          Future.delayed(const Duration(milliseconds: 50), _captureWidget);
         }
       });
     });

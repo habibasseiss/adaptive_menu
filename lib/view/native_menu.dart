@@ -7,16 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class NativeMenuWidget extends StatefulWidget {
-  final Widget child;
-  final List<AdaptiveMenuItem> items;
-  final VoidCallback? onPressed;
-
   const NativeMenuWidget({
     super.key,
-    required this.child,
+    required this.builder,
     required this.items,
-    this.onPressed,
   });
+
+  final AdaptiveMenuBuilder builder;
+  final List<AdaptiveMenuItem> items;
 
   @override
   State<NativeMenuWidget> createState() => _NativeMenuWidgetState();
@@ -71,9 +69,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
 
   // Widget change detection
   bool _hasWidgetChanged(NativeMenuWidget oldWidget) {
-    return widget.child != oldWidget.child ||
-        !listEquals(widget.items, oldWidget.items) ||
-        widget.onPressed != oldWidget.onPressed;
+    return widget.builder != oldWidget.builder ||
+        !listEquals(widget.items, oldWidget.items);
   }
 
   // Initialization helpers
@@ -133,7 +130,6 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
       'child': _buildChildParams(),
       if (widget.items.isNotEmpty)
         'items': await _serializeMenuItems(widget.items),
-      'showsMenuAsPrimaryAction': widget.onPressed == null,
     };
   }
 
@@ -272,17 +268,10 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   // Method call handling
   Future<void> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
-      case 'buttonTapped':
-        _handleButtonTapped();
-        break;
       case 'actionSelected':
         _handleActionSelected(call.arguments);
         break;
     }
-  }
-
-  void _handleButtonTapped() {
-    widget.onPressed?.call();
   }
 
   void _handleActionSelected(dynamic arguments) {
@@ -329,7 +318,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
         onPlatformViewCreated: _onPlatformViewCreated,
         onSizeChanged: _onSizeChanged,
         onImageCaptured: _onImageCaptured,
-        child: widget.child,
+        builder: widget.builder,
       );
     }
     return Text('$_viewType is not available on this platform.');
@@ -338,21 +327,21 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
 
 /// A widget that automatically sizes the native menu based on the child widget's layout.
 class _AutoSizeNativeMenu extends StatefulWidget {
-  final Widget child;
-  final String viewType;
-  final Map<String, dynamic> creationParams;
-  final Function(int) onPlatformViewCreated;
-  final Function(Size) onSizeChanged;
-  final Function(Uint8List) onImageCaptured;
-
   const _AutoSizeNativeMenu({
-    required this.child,
+    required this.builder,
     required this.viewType,
     required this.creationParams,
     required this.onPlatformViewCreated,
     required this.onSizeChanged,
     required this.onImageCaptured,
   });
+
+  final AdaptiveMenuBuilder builder;
+  final String viewType;
+  final Map<String, dynamic> creationParams;
+  final Function(int) onPlatformViewCreated;
+  final Function(Size) onSizeChanged;
+  final Function(Uint8List) onImageCaptured;
 
   @override
   State<_AutoSizeNativeMenu> createState() => _AutoSizeNativeMenuState();
@@ -362,10 +351,14 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
     with WidgetsBindingObserver {
   final GlobalKey _childKey = GlobalKey();
   Size? _childSize;
+  late Widget _child;
 
   @override
   void initState() {
     super.initState();
+
+    _child = widget.builder(() {});
+
     WidgetsBinding.instance.addObserver(this);
     _schedulePostFrameCallback(_updateChildSize);
   }
@@ -378,6 +371,9 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
   @override
   void didUpdateWidget(_AutoSizeNativeMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.builder != oldWidget.builder) {
+      _child = widget.builder(() {});
+    }
     _schedulePostFrameCallback(_updateChildSize);
   }
 
@@ -458,7 +454,7 @@ class _AutoSizeNativeMenuState extends State<_AutoSizeNativeMenu>
       child: WidgetAsImage(
         key: _childKey,
         onImageCaptured: _handleImageCaptured,
-        child: widget.child,
+        child: _child,
       ),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:adaptive_menu/adaptive_menu.dart';
-import 'package:adaptive_menu/util/widget_util.dart';
 import 'package:adaptive_menu_example/common/trailing_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,66 +8,42 @@ class CupertinoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Adaptive Menu Example'),
-        leading: _BackButton(),
-        trailing: TrailingWidget(
-          type: AdaptiveMenuType.native,
-          child: Icon(CupertinoIcons.ellipsis_circle, size: 26),
-        ),
-        padding: EdgeInsetsDirectional.fromSTEB(0, 0, 16, 0),
+    return CupertinoTheme(
+      data: const CupertinoThemeData(
+        brightness: Brightness.light,
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
-      child: SafeArea(
+      child: Theme(
+        data: ThemeData(scaffoldBackgroundColor: Colors.white),
         child: Scaffold(
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _WidgetMenu(),
-              const SizedBox(height: 32),
-              _TextNativeButton(),
-              const SizedBox(height: 32),
-              _ListItemButton(),
-              WidgetAsImage(
-                child: CupertinoListTile.notched(
-                  leading: FlutterLogo(),
-                  title: Text('One-line with both widgets'),
-                  trailing: Icon(Icons.unfold_more),
+          bottomNavigationBar: _BottomNavigationBar(),
+          body: CupertinoPageScaffold(
+            navigationBar: CupertinoNavigationBar(
+              middle: const Text('Cupertino Example'),
+              leading: CupertinoNavigationBarBackButton(
+                previousPageTitle: 'Back',
+              ),
+              trailing: TrailingWidget(
+                type: AdaptiveMenuType.native,
+                builder: (openMenu) => CupertinoButton(
+                  onPressed: openMenu,
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Icon(
+                    CupertinoIcons.ellipsis_circle,
+                    size: 26,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
-            ],
+              padding: EdgeInsetsDirectional.zero,
+            ),
+            child: ListView(
+              children: [_WidgetMenu(), _TextMenu(), _ListItemButton()],
+            ),
           ),
-          bottomNavigationBar: _BottomNavigationBar(),
         ),
       ),
-    );
-  }
-}
-
-class _BackButton extends StatelessWidget {
-  const _BackButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return AdaptiveMenu(
-      onPressed: () {
-        Navigator.pop(context);
-      },
-      items: [
-        AdaptiveMenuAction(
-          title: 'Example Action 1',
-          onPressed: () {
-            debugPrint('Example Action 1 was tapped!');
-          },
-        ),
-        AdaptiveMenuAction(
-          title: 'Example Action 2',
-          onPressed: () {
-            debugPrint('Example Action 2 was tapped!');
-          },
-        ),
-      ],
-      child: Icon(CupertinoIcons.back, size: 26),
     );
   }
 }
@@ -101,10 +76,6 @@ class _BottomNavigationBar extends StatelessWidget {
               onPressed: () {},
             ),
             AdaptiveMenu(
-              onPressed: () {
-                debugPrint('NativeMenuWidget was tapped!');
-              },
-              // size: const Size(64, 32),
               items: [
                 AdaptiveMenuAction(
                   title: 'New Tab',
@@ -160,7 +131,14 @@ class _BottomNavigationBar extends StatelessWidget {
                   },
                 ),
               ],
-              child: Icon(CupertinoIcons.square_on_square, size: 24),
+              builder: (openMenu) => CupertinoButton(
+                onPressed: openMenu,
+                child: Icon(
+                  CupertinoIcons.square_on_square,
+                  size: 24,
+                  color: CupertinoTheme.of(context).primaryColor,
+                ),
+              ),
             ),
           ],
         ),
@@ -174,59 +152,71 @@ class _WidgetMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AdaptiveMenu(
-      type: AdaptiveMenuType.native,
-      items: [
-        AdaptiveMenuAction(
-          title: 'Select',
-          icon: CupertinoIcons.check_mark_circled,
-          onPressed: () {
-            debugPrint('Select was tapped!');
-          },
-        ),
-        AdaptiveMenuAction(
-          title: 'New Folder',
-          icon: CupertinoIcons.folder_badge_plus,
-          onPressed: () {
-            debugPrint('New Folder was tapped!');
-          },
-        ),
-      ],
-      child: Card(
-        color: Colors.red,
-        child: SizedBox(
-          width: 100,
-          height: 100,
-          child: Center(child: const Text('Card')),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: AdaptiveMenu(
+        type: AdaptiveMenuType.native,
+        items: [
+          AdaptiveMenuAction(
+            title: 'Select',
+            icon: CupertinoIcons.check_mark_circled,
+            onPressed: () {
+              debugPrint('Select was tapped!');
+            },
+          ),
+          AdaptiveMenuAction(
+            title: 'New Folder',
+            icon: CupertinoIcons.folder_badge_plus,
+            onPressed: () {
+              debugPrint('New Folder was tapped!');
+            },
+          ),
+        ],
+        builder: (_) => Card(
+          elevation: 0,
+          color: Colors.blueGrey.shade200,
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(8.0),
+            width: 100,
+            height: 100,
+            child: const Text(
+              'This is a Card Menu',
+              textAlign: TextAlign.center,
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _TextNativeButton extends StatelessWidget {
-  const _TextNativeButton();
+class _TextMenu extends StatelessWidget {
+  const _TextMenu();
 
   @override
   Widget build(BuildContext context) {
-    return AdaptiveMenu(
-      items: [
-        AdaptiveMenuAction(
-          title: 'Select',
-          icon: CupertinoIcons.check_mark_circled,
-          onPressed: () {
-            debugPrint('Select was tapped!');
-          },
-        ),
-        AdaptiveMenuAction(
-          title: 'New Folder',
-          icon: CupertinoIcons.folder_badge_plus,
-          onPressed: () {
-            debugPrint('New Folder was tapped!');
-          },
-        ),
-      ],
-      child: const Text('This is a Text Menu'),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: AdaptiveMenu(
+        items: [
+          AdaptiveMenuAction(
+            title: 'Select',
+            icon: CupertinoIcons.check_mark_circled,
+            onPressed: () {
+              debugPrint('Select was tapped!');
+            },
+          ),
+          AdaptiveMenuAction(
+            title: 'New Folder',
+            icon: CupertinoIcons.folder_badge_plus,
+            onPressed: () {
+              debugPrint('New Folder was tapped!');
+            },
+          ),
+        ],
+        builder: (openMenu) => const Text('This is a Text Menu'),
+      ),
     );
   }
 }
@@ -255,9 +245,10 @@ class _ListItemButton extends StatelessWidget {
               },
             ),
           ],
-          child: CupertinoListTile.notched(
+          builder: (openMenu) => CupertinoListTile.notched(
+            onTap: openMenu,
             leading: FlutterLogo(),
-            title: Text('One-line with both widgets'),
+            title: Text('List Item Menu'),
             trailing: Icon(Icons.unfold_more),
           ),
         ),

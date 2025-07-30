@@ -61,7 +61,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         _button.contentHorizontalAlignment = .fill
         _button.contentVerticalAlignment = .fill
         _button.imageView?.contentMode = .scaleAspectFit
-        _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        // _button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         // Remove the default system button tint to prevent blue flickering
         _button.tintColor = UIColor.clear
@@ -114,9 +114,9 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         _view.layoutIfNeeded()
     }
 
-    @objc private func buttonTapped() {
-        _methodChannel.invokeMethod("buttonTapped", arguments: nil)
-    }
+    // @objc private func buttonTapped() {
+    //     _methodChannel.invokeMethod("buttonTapped", arguments: nil)
+    // }
 
     // MARK: - Button Configuration
     private func updateButtonProperties(with args: Any?) {
@@ -138,7 +138,7 @@ class NativeMenuView: NSObject, FlutterPlatformView {
         _button.backgroundColor = UIColor.clear
         _button.frame = _view.bounds
         _button.menu = nil
-        _button.showsMenuAsPrimaryAction = false
+        // _button.showsMenuAsPrimaryAction = false
         _button.isEnabled = true
     }
     
@@ -208,8 +208,8 @@ class NativeMenuView: NSObject, FlutterPlatformView {
     }
     
     private func _configureMenuBehavior(from arguments: [String: Any]) {
-        let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
-        _button.showsMenuAsPrimaryAction = showsMenuAsPrimaryAction
+        // let showsMenuAsPrimaryAction = arguments["showsMenuAsPrimaryAction"] as? Bool ?? true
+        _button.showsMenuAsPrimaryAction = true
     }
 
     // Updates the image in the button

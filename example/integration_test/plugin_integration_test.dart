@@ -13,12 +13,14 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Find the AdaptiveMenu widget. We'll look for the one with the 'square_on_square' icon.
-      final adaptiveMenuFinder = find.byWidgetPredicate(
-        (Widget widget) =>
-            widget is AdaptiveMenu &&
-            widget.child is Icon &&
-            (widget.child as Icon).icon == CupertinoIcons.square_on_square,
+      // Tap the button to navigate to the Cupertino examples screen.
+      await tester.tap(find.text('Cupertino'));
+      await tester.pumpAndSettle();
+
+      // Find the specific AdaptiveMenu widget that contains the ellipsis icon.
+      final adaptiveMenuFinder = find.ancestor(
+        of: find.byIcon(CupertinoIcons.ellipsis_circle),
+        matching: find.byType(AdaptiveMenu),
       );
 
       expect(adaptiveMenuFinder, findsOneWidget);

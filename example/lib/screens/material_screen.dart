@@ -9,21 +9,44 @@ class MaterialScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Adaptive Menu Example'),
+        title: const Text('Material Example'),
         actions: [
           TrailingWidget(
             type: AdaptiveMenuType.material,
-            child: Icon(Icons.more_vert),
+            builder: (openMenu) => IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: openMenu,
+            ),
           ),
         ],
       ),
-      body: SizedBox(
-        width: double.infinity,
-        child: Image.asset(
-          'assets/image.png',
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-        ),
+      body: ListView(
+        children: [
+          AdaptiveMenu(
+            type: AdaptiveMenuType.material,
+            items: [
+              AdaptiveMenuAction(
+                title: 'Select',
+                icon: Icons.check,
+                onPressed: () {
+                  debugPrint('Select was tapped!');
+                },
+              ),
+              AdaptiveMenuAction(
+                title: 'New Folder',
+                icon: Icons.folder,
+                onPressed: () {
+                  debugPrint('New Folder was tapped!');
+                },
+              ),
+            ],
+            builder: (openMenu) => ListTile(
+              title: const Text('List Tile Menu'),
+              trailing: Icon(Icons.more_vert),
+              onTap: openMenu,
+            ),
+          ),
+        ],
       ),
     );
   }

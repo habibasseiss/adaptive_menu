@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 class MaterialMenu extends StatelessWidget {
   const MaterialMenu({
     required this.items,
-    required this.child,
+    this.child,
     this.size,
     this.onPressed,
+    this.builder,
     super.key,
   });
 
   final List<AdaptiveMenuItem> items;
   final Size? size;
   final VoidCallback? onPressed;
-  final Widget child;
+  final Widget? child;
+  final AdaptiveMenuBuilder? builder;
 
   List<Widget> _buildMenuItems(
     List<AdaptiveMenuItem> menuItems,
@@ -133,38 +135,12 @@ class MaterialMenu extends StatelessWidget {
       ),
       crossAxisUnconstrained: false,
       menuChildren: _buildMenuItems(items, context),
-      builder:
-          (
-            BuildContext context,
-            MenuController controller,
-            Widget? anchorChild,
-          ) {
-            Widget? effectiveChild;
+      builder: (context, controller, child) {
+        openMenu() =>
+            (controller.isOpen) ? controller.close() : controller.open();
 
-            if (child is Icon) {
-              final childIcon = (child as Icon);
-
-              effectiveChild = IconButton(
-                icon: Icon(childIcon.icon, size: childIcon.size),
-                onPressed: () {
-                  onPressed
-                      ?.call(); // Call the user-provided onPressed callback for the menu trigger
-                  if (controller.isOpen) {
-                    controller.close();
-                  } else {
-                    controller.open();
-                  }
-                },
-              );
-            } else {
-              throw Exception('Unsupported child type: ${child.runtimeType}');
-            }
-
-            return SizedBox.fromSize(
-              size: size,
-              child: Center(child: effectiveChild),
-            );
-          },
+        return builder!.call(openMenu);
+      },
     );
   }
 }
