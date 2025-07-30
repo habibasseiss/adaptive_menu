@@ -4,8 +4,6 @@ import UIKit
 class NativeMenuView: NSObject, FlutterPlatformView {
     // MARK: - Constants
     private static let channelPrefix = "app.digizorg/native_menu_channel_"
-    private static let defaultIconSize: CGFloat = 20.0
-    private static let materialIconsFont = "MaterialIcons-Regular"
     
     // MARK: - Properties
     private var _view: UIView
@@ -277,16 +275,19 @@ class NativeMenuView: NSObject, FlutterPlatformView {
                 let actionStyle = itemDict["style"] as? String ?? "normal"
 
                 if let iconData = itemDict["icon"] as? [String: Any],
-                   let codePoint = iconData["codePoint"] as? Int,
-                   let fontFamily = iconData["fontFamily"] as? String {
-                    let iconSize: CGFloat = 20.0
-                    
-                    // For destructive actions, we still want to use a specific color
-                    if actionStyle == "destructive" {
-                        actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize, color: .systemRed)
-                    } else {
-                        // For normal actions, use template images that will adapt to system appearance
-                        actionImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize)
+                   let imageData = iconData["imageData"] as? FlutterStandardTypedData {
+                    if let image = UIImage(data: imageData.data) {
+                        // Resize the high-resolution image to the correct display size (20x20 points)
+                        let targetSize = CGSize(width: 20.0, height: 20.0)
+                        if let resizedImage = resizeImage(image, to: targetSize) {
+                            // For destructive actions, we want to tint the image red
+                            if actionStyle == "destructive" {
+                                actionImage = resizedImage.withTintColor(.systemRed, renderingMode: .alwaysOriginal)
+                            } else {
+                                // For normal actions, use template images that will adapt to system appearance
+                                actionImage = resizedImage.withRenderingMode(.alwaysTemplate)
+                            }
+                        }
                     }
                 }
 
@@ -316,11 +317,15 @@ class NativeMenuView: NSObject, FlutterPlatformView {
 
                 var groupImage: UIImage? = nil
                 if let iconData = itemDict["icon"] as? [String: Any],
-                   let codePoint = iconData["codePoint"] as? Int,
-                   let fontFamily = iconData["fontFamily"] as? String {
-                    let iconSize: CGFloat = 20.0
-                    // Use template images for group icons that will adapt to system appearance
-                    groupImage = self.imageFromIconFont(codePoint: codePoint, fontFamily: fontFamily, size: iconSize)
+                   let imageData = iconData["imageData"] as? FlutterStandardTypedData {
+                    if let image = UIImage(data: imageData.data) {
+                        // Resize the high-resolution image to the correct display size (20x20 points)
+                        let targetSize = CGSize(width: 20.0, height: 20.0)
+                        if let resizedImage = resizeImage(image, to: targetSize) {
+                            // Use template images for group icons that will adapt to system appearance
+                            groupImage = resizedImage.withRenderingMode(.alwaysTemplate)
+                        }
+                    }
                 }
 
                 let groupStyle = itemDict["style"] as? String ?? "normal"
@@ -335,40 +340,14 @@ class NativeMenuView: NSObject, FlutterPlatformView {
             return nil
         }
     }
-
-    // Helper function to create a UIImage from an icon font character
-    // Returns a template image that can adapt to system appearance changes
-    private func imageFromIconFont(codePoint: Int, fontFamily: String, size: CGFloat, color: UIColor? = nil) -> UIImage? {
-        var effectiveFontFamily = fontFamily
-        if fontFamily == "MaterialIcons" {
-            effectiveFontFamily = "MaterialIcons-Regular"
-        }
-
-        guard let font = UIFont(name: effectiveFontFamily, size: size) else {
-            return nil
-        }
-        
-        let character = String(format: "%C", codePoint)
-        
-        // Use black color for template images
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: color ?? UIColor.black
-        ]
-        
-        let attributedString = NSAttributedString(string: character, attributes: attributes)
-        let imageSize = attributedString.size()
-        
-        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0.0)
-        attributedString.draw(at: .zero)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
+    
+    // Helper function to resize a high-resolution image to the correct display size
+    private func resizeImage(_ image: UIImage, to size: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        image.draw(in: CGRect(origin: .zero, size: size))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        
-        // If no specific color is provided, return a template image that will use the system's tint color
-        if color == nil {
-            return image?.withRenderingMode(.alwaysTemplate)
-        }
-        
-        return image
+        return resizedImage
     }
+
 }

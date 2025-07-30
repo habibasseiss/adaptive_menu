@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:adaptive_menu/adaptive_menu.dart';
 import 'package:adaptive_menu/util/widget_util.dart';
 import 'package:flutter/foundation.dart';
@@ -26,10 +28,12 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
 
   MethodChannel? _instanceMethodChannel;
   Uint8List? _capturedImage;
+  Map<String, dynamic>? _cachedParams;
 
   @override
   void initState() {
     super.initState();
+    _updateCachedParams();
     _schedulePostFrameCallback(_initializeMenuIfReady);
   }
 
@@ -37,6 +41,7 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   void didUpdateWidget(NativeMenuWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_hasWidgetChanged(oldWidget)) {
+      _updateCachedParams();
       _updateNativeView();
     }
   }
@@ -92,7 +97,8 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   Future<void> _updateNativeView() async {
     if (_instanceMethodChannel == null) return;
 
-    await _instanceMethodChannel!.invokeMethod('update', _buildParams());
+    final params = await _buildParams();
+    await _instanceMethodChannel!.invokeMethod('update', params);
     _scheduleSizeUpdate();
   }
 
@@ -111,11 +117,22 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
     }
   }
 
+  void _updateCachedParams() {
+    _buildParams().then((params) {
+      if (mounted) {
+        setState(() {
+          _cachedParams = params;
+        });
+      }
+    });
+  }
+
   // Parameter building
-  Map<String, dynamic> _buildParams() {
+  Future<Map<String, dynamic>> _buildParams() async {
     return {
       'child': _buildChildParams(),
-      if (widget.items.isNotEmpty) 'items': _serializeMenuItems(widget.items),
+      if (widget.items.isNotEmpty)
+        'items': await _serializeMenuItems(widget.items),
       'showsMenuAsPrimaryAction': widget.onPressed == null,
     };
   }
@@ -140,47 +157,112 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   }
 
   // Menu item serialization
-  List<Map<String, dynamic>> _serializeMenuItems(List<AdaptiveMenuItem> items) {
-    return items.map(_serializeMenuItem).toList();
+  Future<List<Map<String, dynamic>>> _serializeMenuItems(
+    List<AdaptiveMenuItem> items,
+  ) async {
+    final List<Map<String, dynamic>> serializedItems = [];
+    for (final item in items) {
+      serializedItems.add(await _serializeMenuItem(item));
+    }
+    return serializedItems;
   }
 
-  Map<String, dynamic> _serializeMenuItem(AdaptiveMenuItem item) {
+  Future<Map<String, dynamic>> _serializeMenuItem(AdaptiveMenuItem item) async {
     if (item is AdaptiveMenuAction) {
-      return _serializeMenuAction(item);
+      return await _serializeMenuAction(item);
     } else if (item is AdaptiveMenuGroup) {
-      return _serializeMenuGroup(item);
+      return await _serializeMenuGroup(item);
     }
     return <String, dynamic>{};
   }
 
-  Map<String, dynamic> _serializeMenuAction(AdaptiveMenuAction action) {
-    return {
+  Future<Map<String, dynamic>> _serializeMenuAction(
+    AdaptiveMenuAction action,
+  ) async {
+    final Map<String, dynamic> result = {
       'type': 'action',
       'id': action.id,
       'title': action.title,
       'style': _getStyleString(action.style),
       if (action.description != null) 'description': action.description,
       if (action.checked != null) 'checked': action.checked,
-      if (action.icon != null) 'icon': _serializeIcon(action.icon!),
     };
+
+    if (action.icon != null) {
+      result['icon'] = await _serializeIcon(action.icon!);
+    }
+
+    return result;
   }
 
-  Map<String, dynamic> _serializeMenuGroup(AdaptiveMenuGroup group) {
-    return {
+  Future<Map<String, dynamic>> _serializeMenuGroup(
+    AdaptiveMenuGroup group,
+  ) async {
+    final Map<String, dynamic> result = {
       'type': 'group',
       'title': group.title,
       'style': _getStyleString(group.style),
-      'items': _serializeMenuItems(group.actions),
-      if (group.icon != null) 'icon': _serializeIcon(group.icon!),
+      'items': await _serializeMenuItems(group.actions),
+    };
+
+    if (group.icon != null) {
+      result['icon'] = await _serializeIcon(group.icon!);
+    }
+
+    return result;
+  }
+
+  Future<Map<String, dynamic>> _serializeIcon(IconData icon) async {
+    final imageBytes = await _convertIconToPng(icon);
+    return {
+      'imageData': imageBytes,
     };
   }
 
-  Map<String, dynamic> _serializeIcon(IconData icon) {
-    return {
-      'codePoint': icon.codePoint,
-      'fontFamily': icon.fontFamily,
-      'fontPackage': icon.fontPackage,
-    };
+  Future<Uint8List> _convertIconToPng(
+    IconData icon, {
+    double size = 20.0,
+    Color? color,
+  }) async {
+    // Use 3x scale for high-resolution displays (@3x)
+    const double scale = 3.0;
+    final double scaledSize = size * scale;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontSize: scaledSize,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          color: color ?? Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    
+    // Create a square canvas based on the scaled size to maintain proportions
+    final double canvasSize = scaledSize;
+    
+    // Center the icon within the square canvas
+    final double offsetX = (canvasSize - textPainter.width) / 2;
+    final double offsetY = (canvasSize - textPainter.height) / 2;
+    
+    textPainter.paint(canvas, Offset(offsetX, offsetY));
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(
+      canvasSize.ceil(),
+      canvasSize.ceil(),
+    );
+
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
   }
 
   String _getStyleString(dynamic style) {
@@ -239,9 +321,11 @@ class _NativeMenuWidgetState extends State<NativeMenuWidget> {
   @override
   Widget build(BuildContext context) {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // Use cached params if available, otherwise use empty params temporarily
+      final params = _cachedParams ?? <String, dynamic>{};
       return _AutoSizeNativeMenu(
         viewType: _viewType,
-        creationParams: _buildParams(),
+        creationParams: params,
         onPlatformViewCreated: _onPlatformViewCreated,
         onSizeChanged: _onSizeChanged,
         onImageCaptured: _onImageCaptured,
