@@ -130,9 +130,10 @@ class MaterialMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return MenuAnchor(
       style: MenuStyle(
-        minimumSize: WidgetStatePropertyAll(const Size(224, 0)),
-        maximumSize: WidgetStatePropertyAll(const Size.fromWidth(280)),
+        alignment: AlignmentDirectional.bottomCenter,
+        fixedSize: WidgetStatePropertyAll(const Size.fromWidth(280)),
       ),
+      alignmentOffset: const Offset(-140, 0),
       crossAxisUnconstrained: false,
       menuChildren: _buildMenuItems(items, context),
       builder: (context, controller, child) {
