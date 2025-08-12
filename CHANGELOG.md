@@ -1,3 +1,4 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+* Initial release. It provides basic adaptive menu functionality, with native
+iOS support (UIKit) and a Material Design fallback for other platforms.
