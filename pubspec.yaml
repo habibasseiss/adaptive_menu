@@ -1,11 +1,11 @@
 name: adaptive_menu
 description: "A Flutter package that allows displaying a native iOS pull-down menu on iOS and a Material Design popup menu on other platforms"
 version: 0.0.1
-homepage: digizorg.app
+homepage: https://digizorg.app
 
 environment:
   sdk: ^3.8.1
-  flutter: '>=3.3.0'
+  flutter: ">=3.3.0"
 
 dependencies:
   flutter:
