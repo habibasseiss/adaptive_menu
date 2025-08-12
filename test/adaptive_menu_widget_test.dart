@@ -15,8 +15,9 @@ void main() {
       ),
     ];
 
-    testWidgets('Renders PopupMenuButton on non-iOS platforms',
-        (WidgetTester tester) async {
+    testWidgets('Renders PopupMenuButton on non-iOS platforms', (
+      WidgetTester tester,
+    ) async {
       // Set platform to Android
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
@@ -25,8 +26,8 @@ void main() {
           home: Scaffold(
             body: AdaptiveMenu(
               items: menuItems,
-              size: const Size(24, 24),
-              child: const Icon(Icons.menu), // Changed child to Icon
+              builder: (openMenu) =>
+                  const Icon(Icons.menu), // Changed child to Icon
             ),
           ),
         ),
@@ -61,8 +62,8 @@ void main() {
             body: AdaptiveMenu(
               type: AdaptiveMenuType.native,
               items: menuItems,
-              size: const Size(24, 24),
-              child: const Icon(Icons.menu), // Changed child to Icon
+              builder: (openMenu) =>
+                  const Icon(Icons.menu), // Changed child to Icon
             ),
           ),
         ),
@@ -75,8 +76,9 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    testWidgets('Material menu onPressed callback is triggered',
-        (WidgetTester tester) async {
+    testWidgets('Material menu onPressed callback is triggered', (
+      WidgetTester tester,
+    ) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       bool wasPressed = false;
       final items = [
@@ -93,8 +95,7 @@ void main() {
           home: Scaffold(
             body: AdaptiveMenu(
               items: items,
-              size: const Size(24, 24),
-              child: const Icon(Icons.more_vert),
+              builder: (openMenu) => const Icon(Icons.more_vert),
             ),
           ),
         ),
